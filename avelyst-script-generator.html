@@ -202,8 +202,10 @@ const TYPES = {
 };
 
 let cur = 'edu';
+let prefillTopic = '';
+let prefillNotes = '';
 
-// Load saved key
+// Load saved key + read URL params from dashboard
 window.addEventListener('DOMContentLoaded', () => {
   const saved = localStorage.getItem('avelyst_api_key');
   if (saved) {
@@ -211,7 +213,31 @@ window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('apiStatus').style.display = 'inline';
     document.getElementById('apiBanner').classList.add('saved');
   }
+
+  // Read params passed from dashboard
+  const params = new URLSearchParams(window.location.search);
+  prefillTopic = params.get('topic') || '';
+  prefillNotes = params.get('notes') || '';
+  const pillarParam = params.get('pillar');
+
+  // Auto-select script type based on pillar
+  if (pillarParam) {
+    const pillarMap = {'1':'edu','2':'tips','3':'story','4':'service'};
+    cur = pillarMap[pillarParam] || 'edu';
+    document.querySelectorAll('.tb').forEach((b,i) => {
+      b.classList.toggle('on', ['edu','myth','tips','story','patient','service'][i] === cur);
+    });
+  }
+
   render();
+
+  // Show banner if opened from dashboard
+  if (prefillTopic) {
+    const banner = document.createElement('div');
+    banner.style.cssText = 'background:#E8F0EE;border:1px solid #b2d0c8;border-radius:10px;padding:10px 16px;margin-bottom:16px;font-size:12px;color:#2C4A3E;';
+    banner.innerHTML = '📅 <strong>Opened from dashboard</strong> — topic pre-filled from your content calendar. Edit freely.';
+    document.getElementById('form-area').insertAdjacentElement('beforebegin', banner);
+  }
 });
 
 function saveKey() {
@@ -231,6 +257,8 @@ function getKey() {
 
 function sw(t, btn) {
   cur = t;
+  prefillTopic = '';
+  prefillNotes = '';
   document.querySelectorAll('.tb').forEach(b => b.classList.remove('on'));
   btn.classList.add('on');
   render();
@@ -248,13 +276,18 @@ function getVals() {
 
 function render() {
   const T = TYPES[cur];
-  const fhtml = T.f.map(f => `
+  const fhtml = T.f.map(f => {
+    // Determine prefill value: topic field gets prefillTopic, others empty
+    const isTopicField = f.i === 'topic' || f.i === 'svc';
+    const val = isTopicField ? prefillTopic : '';
+    return `
     <div>
       <label class="fl">${f.l}</label>
       ${f.s
         ? `<select id="fi-${f.i}">${f.s.map(o=>`<option${o===f.def?' selected':''}>${o}</option>`).join('')}</select>`
-        : `<input type="text" id="fi-${f.i}" placeholder="${f.ph}">`}
-    </div>`).join('');
+        : `<input type="text" id="fi-${f.i}" placeholder="${f.ph}" value="${val.replace(/"/g,'&quot;')}">`}
+    </div>`;
+  }).join('');
 
   document.getElementById('form-area').innerHTML = `
     <div class="card">
@@ -263,7 +296,7 @@ function render() {
       <div class="fields ${T.f.length >= 2 ? 'two' : ''}">${fhtml}</div>
       <div style="margin-top:12px">
         <label class="fl">Additional ideas / notes (optional)</label>
-        <textarea id="fi-extra" placeholder="e.g. เพิ่มเรื่อง cortisol, mention ว่าเหมาะกับแม่ที่ยุ่งมาก, ใส่ตัวเลขงานวิจัย, tone ให้ lighthearted มากขึ้น..." style="width:100%;background:var(--cream);border:1px solid var(--sand);border-radius:7px;padding:9px 12px;font-family:inherit;font-size:13px;color:var(--txt);outline:none;resize:vertical;min-height:76px"></textarea>
+        <textarea id="fi-extra" placeholder="e.g. เพิ่มเรื่อง cortisol, mention ว่าเหมาะกับแม่ที่ยุ่งมาก, ใส่ตัวเลขงานวิจัย, tone ให้ lighthearted มากขึ้น..." style="width:100%;background:var(--cream);border:1px solid var(--sand);border-radius:7px;padding:9px 12px;font-family:inherit;font-size:13px;color:var(--txt);outline:none;resize:vertical;min-height:76px">${prefillNotes}</textarea>
       </div>
       <div class="btn-row">
         <button class="btn-gen" id="btn-gen" onclick="generate()">✦ Generate Script</button>
