@@ -212,6 +212,10 @@ function render() {
       <span class="pill ${T.c}">Pillar ${T.p} — ${T.l}</span>
       <div class="card-desc">${T.d}</div>
       <div class="fields ${T.f.length >= 2 ? 'two' : ''}">${fhtml}</div>
+      <div style="margin-top:12px">
+        <label class="fl">Additional ideas / notes (optional)</label>
+        <textarea id="fi-extra" placeholder="e.g. เพิ่มเรื่อง cortisol, mention ว่าเหมาะกับแม่ที่ยุ่งมาก, ใส่ตัวเลขงานวิจัย, tone ให้ lighthearted มากขึ้น..." style="width:100%;background:var(--cream);border:1px solid var(--sand);border-radius:7px;padding:9px 12px;font-family:inherit;font-size:13px;color:var(--txt);outline:none;resize:vertical;min-height:76px"></textarea>
+      </div>
       <div class="btn-row">
         <button class="btn-gen" id="btn-gen" onclick="generate()">✦ Generate Script</button>
         <button class="btn-copy" id="btn-copy" onclick="copyOut()">Copy Script</button>
