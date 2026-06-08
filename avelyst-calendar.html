@@ -376,6 +376,13 @@ function generateCalendar() {
   document.getElementById('legend').style.display='flex';
   document.getElementById('btnExport').style.display='inline-block';
   document.getElementById('btnClear').style.display='inline-block';
+
+  // Save to localStorage so it persists on reload
+  localStorage.setItem('avelyst_calendar', JSON.stringify({
+    calendarData, month, year,
+    pillarLabels,
+    campaign: document.getElementById('campaign').value,
+  }));
 }
 
 function renderCalendar(data, month, year, pillarLabels) {
@@ -463,12 +470,41 @@ function copyModalPrompt() {
 
 function clearCalendar() {
   calendarData = [];
+  localStorage.removeItem('avelyst_calendar');
   document.getElementById('calendarOut').innerHTML = `<div class="empty-state"><div class="big">🗓</div><p>Your 30-day calendar will appear here.<br>Fill in the fields above and click <strong>Generate</strong>.</p></div>`;
   document.getElementById('legend').style.display='none';
   document.getElementById('btnExport').style.display='none';
   document.getElementById('btnClear').style.display='none';
   document.getElementById('exportArea').classList.remove('visible');
 }
+
+// Auto-restore last generated calendar on page load
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('avelyst_calendar');
+  if (!saved) return;
+  try {
+    const {calendarData: cd, month, year, pillarLabels, campaign} = JSON.parse(saved);
+    if (!cd || !cd.length) return;
+    calendarData = cd;
+    // Restore form fields
+    document.getElementById('startMonth').value = month;
+    document.getElementById('startYear').value = year;
+    if (campaign) document.getElementById('campaign').value = campaign;
+    if (pillarLabels) {
+      document.getElementById('p1focus').value = pillarLabels[0]||'';
+      document.getElementById('p2focus').value = pillarLabels[1]||'';
+      document.getElementById('p3focus').value = pillarLabels[2]||'';
+      document.getElementById('p4focus').value = pillarLabels[3]||'';
+    }
+    // Restore calendar display
+    renderCalendar(calendarData, month, year, pillarLabels || []);
+    document.getElementById('legend').style.display='flex';
+    document.getElementById('btnExport').style.display='inline-block';
+    document.getElementById('btnClear').style.display='inline-block';
+  } catch(e) {
+    localStorage.removeItem('avelyst_calendar');
+  }
+});
 
 function showExport() {
   const header = 'Date\tDay\tPillar\tFormat\tTopic\tHook\tFunnel Stage\tStatus';
