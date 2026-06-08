@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Avelyst — Script Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--cream:#FAF7F2;--beige:#EDE8DF;--sand:#D6CEBC;--green:#2C4A3E;--green2:#3D6357;--brown:#4A3728;--acc:#8B6F4E;--acc2:#C4956A;--txt:#1A1A1A;--mut:#6B6560}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--txt);min-height:100vh;padding:32px 24px 60px}
+.wrap{max-width:740px;margin:0 auto}
+header{margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid var(--beige)}
+.logo{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:300;color:var(--green)}
+.logo em{font-style:italic;color:var(--acc2)}
+.sub{font-size:11px;color:var(--mut);letter-spacing:.12em;text-transform:uppercase;margin-top:2px}
+
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:24px}
+.tab{padding:7px 14px;border-radius:8px;border:1px solid var(--sand);background:white;font-family:inherit;font-size:12px;cursor:pointer;color:var(--mut);transition:all .15s}
+.tab.active{background:var(--green);color:var(--cream);border-color:var(--green)}
+.tab:hover:not(.active){background:var(--beige)}
+
+.card{background:white;border:1px solid var(--beige);border-radius:14px;padding:24px}
+.pill{display:inline-block;font-size:10px;padding:3px 9px;border-radius:12px;font-weight:500;margin-bottom:10px;letter-spacing:.04em;text-transform:uppercase}
+.p1{background:#E8F0EE;color:#2C4A3E}
+.p2{background:#F0EBE6;color:#4A3728}
+.p3{background:#EAF0E8;color:#3A5438}
+.p4{background:#F0EBE0;color:#5A4030}
+.card-desc{font-size:13px;color:var(--mut);margin-bottom:20px;line-height:1.5}
+
+.fields{display:grid;gap:12px}
+.fields.two{grid-template-columns:1fr 1fr}
+.field label{display:block;font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--acc);margin-bottom:4px}
+input[type=text],select{width:100%;background:var(--cream);border:1px solid var(--sand);border-radius:7px;padding:9px 12px;font-family:inherit;font-size:13px;color:var(--txt);outline:none}
+input:focus,select:focus{border-color:var(--green)}
+
+.actions{display:flex;gap:8px;align-items:center;margin-top:16px;flex-wrap:wrap}
+.btn-gen{background:var(--green);color:var(--cream);border:none;border-radius:7px;padding:10px 22px;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer}
+.btn-gen:disabled{opacity:.4;cursor:not-allowed}
+.btn-gen:hover:not(:disabled){background:var(--green2)}
+.btn-copy{background:transparent;color:var(--green);border:1.5px solid var(--green);border-radius:7px;padding:9px 18px;font-family:inherit;font-size:12px;cursor:pointer;display:none}
+.btn-copy:hover{background:var(--beige)}
+.loading{font-size:12px;color:var(--mut);font-style:italic;display:none;margin-top:8px}
+
+.output{margin-top:16px;background:var(--green);border-radius:12px;padding:18px 20px;display:none}
+.out-label{font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:rgba(250,247,242,.5);margin-bottom:10px}
+.out-text{font-size:13px;color:var(--cream);line-height:1.8;white-space:pre-wrap;word-wrap:break-word;max-height:500px;overflow-y:auto}
+
+.tip{margin-top:12px;font-size:12px;color:var(--mut);background:var(--beige);border-radius:8px;padding:10px 14px;line-height:1.5}
+
+/* How-to box for non-API mode */
+.how-to{background:var(--brown);border-radius:12px;padding:16px 20px;margin-top:16px;display:none}
+.how-to p{font-size:12px;color:rgba(250,247,242,.8);line-height:1.65;margin-bottom:8px}
+.prompt-box{background:rgba(0,0,0,.2);border-radius:8px;padding:12px;font-size:12px;color:rgba(250,247,242,.75);white-space:pre-wrap;word-wrap:break-word;max-height:220px;overflow-y:auto;margin-bottom:10px}
+.btn-cp2{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:white;padding:7px 16px;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit}
+.btn-cp2:hover{background:rgba(255,255,255,.25)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">AVELYST — <em>Script Generator</em></div>
+    <div class="sub">Phase 2A · Content Production Engine</div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchType('edu')">📚 Educational</button>
+    <button class="tab" onclick="switchType('myth')">🔥 Myth-Bust</button>
+    <button class="tab" onclick="switchType('tips')">💡 Tip List</button>
+    <button class="tab" onclick="switchType('story')">🩺 Doctor's Story</button>
+    <button class="tab" onclick="switchType('patient')">❤️ Patient Journey</button>
+    <button class="tab" onclick="switchType('service')">🏥 Service Intro</button>
+  </div>
+
+  <div id="form-area"></div>
+</div>
+
+<script>
+const SP = `You are writing a video script for Avelyst — a physician-led weight management and metabolic health clinic in Bangkok.
+
+Doctor: Dr. Weeraporn Srisung, MD. American Board of Internal Medicine & Nephrology certified. American Board of Obesity Medicine candidate. Mother of 3. Warm, direct, bilingual Thai/English.
+
+Audience: Thai & expat Bangkokians, 40–60, household income 200K+ THB/month. Frustrated by failed diets. Want evidence-based medical care.
+
+Voice rules:
+- Warm, honest, non-judgmental, conversational
+- Validate the struggle before offering the solution
+- Science-backed but explained simply
+- Never promise rapid results or shame patients
+- Core truth: "It's not your fault — it's your biology. And we can help."
+
+Script format:
+- Write in Thai (main) with English translation at the end
+- Label each section: [HOOK] [BODY] [TAKEAWAY] [CTA]
+- Natural spoken language — as if Dr. Weeraporn is talking directly to camera
+- Every line must earn its place
+
+`;
+
+const TYPES = {
+  edu:{label:'Educational Explainer',pillar:1,pcls:'p1',desc:'Explain a medical concept simply — builds authority (Pillar 1)',
+    fields:[{id:'topic',l:'Topic / concept',p:'e.g. Insulin resistance และทำไมถึงทำให้ลดน้ำหนักยาก'},{id:'length',l:'Length',sel:['30 seconds','60 seconds','90 seconds'],def:'60 seconds'},{id:'msg',l:'Key takeaway for viewer',p:'e.g. ปัญหาไม่ใช่ willpower — มันคือฮอร์โมน'}],
+    q:v=>`${SP}Write a ${v.length||'60 seconds'} educational video script about: "${v.topic||'[topic]'}"\nKey takeaway: "${v.msg||''}"\n\n[HOOK] — Surprising or validating opening (1-2 sentences)\n[BODY] — Explain simply using an analogy. 2-3 key points max.\n[TAKEAWAY] — One clear actionable insight\n[CTA] — Soft call to action (save, follow, or DM)\n\nThen full English translation below.`},
+  myth:{label:'Myth-Bust',pillar:1,pcls:'p1',desc:'Debunk a common health belief with evidence — high share rate',
+    fields:[{id:'myth',l:'The myth',p:'e.g. ออกกำลังกาย cardio ทุกวันคือวิธีที่ดีที่สุดในการลดน้ำหนัก'},{id:'truth',l:'The scientific truth',p:'e.g. Weight training เพิ่ม resting metabolism ได้มากกว่า'},{id:'why',l:'Why this myth is so common (optional)',p:'e.g. เพราะ cardio เห็นผลเร็วในระยะแรก'}],
+    q:v=>`${SP}Write a 60-second myth-busting Reel script.\nMyth: "${v.myth||''}"\nTruth: "${v.truth||''}"\nWhy myth persists: "${v.why||'not specified'}"\n\n[HOOK] — State the myth, then flip it\n[BODY] — "Here's what science says..." simple explanation + 1 analogy\n[TAKEAWAY] — Practical implication for viewer\n[CTA] — Invite comment or save\n\nThen full English translation.`},
+  tips:{label:'Tip List',pillar:2,pcls:'p2',desc:'"5 things that..." format — highest save rate (Pillar 2)',
+    fields:[{id:'topic',l:'Tip topic',p:'e.g. นิสัยที่ช่วยให้ metabolism ดีขึ้นโดยไม่ต้องออกกำลังกายหนัก'},{id:'num',l:'Number of tips',sel:['3','5','7'],def:'5'},{id:'audience',l:'Who is this for?',p:'e.g. คนที่ไม่มีเวลา, แม่ที่ดูแลลูก'}],
+    q:v=>`${SP}Write a "${v.num||'5'} things" Reel script about: "${v.topic||''}"\nTarget viewer: "${v.audience||'general audience'}"\n\n[HOOK] — Open with who this is for and why they need it\n[BODY] — Each tip with 1-sentence "why it works" — make each feel like insider knowledge\n[TAKEAWAY] — Reinforce the overall message\n[CTA] — "Save this for when you need it"\n\nThen full English translation.`},
+  story:{label:"Doctor's Story",pillar:3,pcls:'p3',desc:'Personal perspective from Dr. Weeraporn — builds personal brand (Pillar 3)',
+    fields:[{id:'topic',l:'Story or opinion topic',p:'e.g. ทำไมฉันถึงเลิก prescribe ยาโดยไม่ดู lifestyle ของคนไข้ก่อน'},{id:'emotion',l:'Emotion to leave viewer with',p:'e.g. ความหวัง, ความรู้สึกว่ามีคนเข้าใจ'},{id:'personal',l:'Personal element (optional)',p:'e.g. ประสบการณ์จาก ICU, ชีวิตแม่ลูก 3 คน'}],
+    q:v=>`${SP}Write a personal 60-second Reel script from Dr. Weeraporn's perspective.\nTopic: "${v.topic||''}"\nEmotion: "${v.emotion||'hope and validation'}"\nPersonal element: "${v.personal||'her doctor + mother identity'}"\n\n[HOOK] — Start with a personal moment or confession (not a question)\n[BODY] — Short story or honest opinion. First person "ฉัน". Sound like a real person, not a lecture.\n[TAKEAWAY] — Insight she wants viewers to carry with them\n[CTA] — Soft, genuine — not a sale\n\nThen full English translation.`},
+  patient:{label:'Patient Journey',pillar:2,pcls:'p2',desc:'Real transformation — doctor narrates (always anonymised)',
+    fields:[{id:'profile',l:'Patient profile (anonymised)',p:'e.g. หญิง 47 ปี มีเบาหวาน ลองลดน้ำหนักมา 5 ปีไม่สำเร็จ'},{id:'root',l:'Root cause discovered',p:'e.g. Insulin resistance รุนแรงที่ไม่ได้รับการรักษา'},{id:'result',l:'Outcome / result',p:'e.g. ลด 9 กก. ใน 4 เดือน HbA1c ลดจาก 7.8 เป็น 6.2'}],
+    q:v=>`${SP}Write a 75-second patient journey Reel script, narrated by Dr. Weeraporn ("I had a patient...").\nPatient: "${v.profile||''}"\nRoot cause: "${v.root||''}"\nOutcome: "${v.result||''}"\n\n[HOOK] — Open with the patient's frustration (relatable to viewer)\n[BODY] — "When she came to me..." → what we found → why previous attempts failed → what we did differently\n[TAKEAWAY] — It wasn't her fault, it was biology\n[CTA] — Gentle invite to consult\n\nCompletely anonymised. Then full English translation.`},
+  service:{label:'Service Intro',pillar:4,pcls:'p4',desc:'Introduce a service or program — warm, never pushy (Pillar 4)',
+    fields:[{id:'service',l:'Service to introduce',p:'e.g. Initial consultation + metabolic assessment'},{id:'pain',l:'Pain point this solves',p:'e.g. ไม่รู้ว่า metabolism ของตัวเองมีปัญหาอะไร'},{id:'cta',l:'Desired action',p:'e.g. DM หรือ LINE @avelyst'}],
+    q:v=>`${SP}Write a 45-second service intro Reel for: "${v.service||''}"\nPain point: "${v.pain||''}"\nAction: "${v.cta||'DM or LINE to book'}"\n\n[HOOK] — Start with the patient's feeling, not the service name\n[BODY] — What we do simply. What makes it different. What patient gets.\n[TAKEAWAY] — One-line reason to act\n[CTA] — Warm, specific, easy next step. No pressure.\n\nThen full English translation.`},
+};
+
+let active = 'edu';
+let lastPrompt = '';
+
+function switchType(t) {
+  active = t;
+  document.querySelectorAll('.tab').forEach((b,i) => {
+    b.classList.toggle('active', ['edu','myth','tips','story','patient','service'][i] === t);
+  });
+  renderForm();
+}
+
+function getVals(T) {
+  const v = {};
+  T.fields.forEach(f => {
+    const el = document.getElementById('f-'+f.id);
+    if (el) v[f.id] = el.value;
+  });
+  return v;
+}
+
+function renderForm() {
+  const T = TYPES[active];
+  const fhtml = T.fields.map(f => `
+    <div class="field">
+      <label>${f.l}</label>
+      ${f.sel
+        ? `<select id="f-${f.id}">${f.sel.map(o=>`<option${o===f.def?' selected':''}>${o}</option>`).join('')}</select>`
+        : `<input type="text" id="f-${f.id}" placeholder="${f.p}">`}
+    </div>`).join('');
+
+  document.getElementById('form-area').innerHTML = `
+    <div class="card">
+      <span class="pill ${T.pcls}">Pillar ${T.pillar} — ${T.label}</span>
+      <div class="card-desc">${T.desc}</div>
+      <div class="fields ${T.fields.length >= 2 ? 'two' : ''}">${fhtml}</div>
+      <div class="actions">
+        <button class="btn-gen" id="btn-gen" onclick="generate()">✦ Generate Script</button>
+        <button class="btn-copy" id="btn-copy" onclick="copyOut()">Copy Script</button>
+      </div>
+      <div class="loading" id="loading">Writing your script…</div>
+      <div class="output" id="output">
+        <div class="out-label">Generated Script</div>
+        <div class="out-text" id="out-text"></div>
+      </div>
+      <div class="how-to" id="how-to">
+        <p><strong style="color:var(--acc2)">Can't connect to AI?</strong> Copy the prompt below and paste it into <a href="https://claude.ai/new" target="_blank" style="color:var(--acc2)">claude.ai</a> directly:</p>
+        <div class="prompt-box" id="prompt-box"></div>
+        <button class="btn-cp2" onclick="copyPrompt()">Copy Prompt</button>
+      </div>
+      <div class="tip">💡 After generating: record yourself reading it naturally → edit in CapCut → add auto-captions</div>
+    </div>`;
+}
+
+async function generate() {
+  const T = TYPES[active];
+  const vals = getVals(T);
+  const prompt = T.q(vals);
+  lastPrompt = prompt;
+
+  const btn = document.getElementById('btn-gen');
+  const loading = document.getElementById('loading');
+  const output = document.getElementById('output');
+  const outText = document.getElementById('out-text');
+  const copyBtn = document.getElementById('btn-copy');
+  const howTo = document.getElementById('how-to');
+
+  btn.disabled = true;
+  loading.style.display = 'block';
+  output.style.display = 'none';
+  copyBtn.style.display = 'none';
+  howTo.style.display = 'none';
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{role:'user', content: prompt}]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.map(b=>b.text||'').join('') || 'Error — please try again.';
+    outText.textContent = text;
+    output.style.display = 'block';
+    copyBtn.style.display = 'inline-block';
+  } catch(e) {
+    // Show fallback prompt instead
+    document.getElementById('prompt-box').textContent = prompt;
+    howTo.style.display = 'block';
+  }
+
+  btn.disabled = false;
+  loading.style.display = 'none';
+}
+
+function copyOut() {
+  navigator.clipboard.writeText(document.getElementById('out-text').textContent).then(()=>{
+    const b = document.getElementById('btn-copy');
+    b.textContent = 'Copied!';
+    setTimeout(()=>b.textContent='Copy Script', 1500);
+  });
+}
+
+function copyPrompt() {
+  navigator.clipboard.writeText(document.getElementById('prompt-box').textContent).then(()=>{
+    const b = event.currentTarget;
+    b.textContent = 'Copied!';
+    setTimeout(()=>b.textContent='Copy Prompt', 1500);
+  });
+}
+
+renderForm();
+</script>
+</body>
+</html>
