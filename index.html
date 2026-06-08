@@ -339,10 +339,13 @@ async function loadFromSheet() {
       const {calendarData: cd} = JSON.parse(calSaved);
       if (cd && cd.length) {
         // Convert calendar data to schedule keyed by ISO date
+        // Use local date math (not toISOString which shifts to UTC)
         schedule = {};
         cd.forEach(p => {
-          const dateObj = new Date(p.year, p.month, p.date);
-          const iso = dateObj.toISOString().split('T')[0];
+          const y = p.year;
+          const m = String(p.month + 1).padStart(2, '0');
+          const d = String(p.date).padStart(2, '0');
+          const iso = `${y}-${m}-${d}`;
           schedule[iso] = {
             date: iso,
             pillar: p.pillar,
@@ -434,7 +437,10 @@ function getWeekDates(offset) {
 }
 
 function toISODate(date) {
-  return date.toISOString().split('T')[0];
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
 function jumpWeek(dir) {
