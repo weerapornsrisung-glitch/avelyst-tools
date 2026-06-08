@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Avelyst — Content Calendar Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--cream:#FAF7F2;--beige:#EDE8DF;--sand:#D6CEBC;--green:#2C4A3E;--green2:#3D6357;--brown:#4A3728;--acc:#8B6F4E;--acc2:#C4956A;--txt:#1A1A1A;--mut:#6B6560;
+--p1:#2C4A3E;--p2:#6B4C3B;--p3:#4A6741;--p4:#7A5C47;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--txt);min-height:100vh}
+header{background:var(--green);padding:0 40px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100}
+.logo{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:300;color:var(--cream);letter-spacing:.1em}
+.logo em{font-style:italic;color:var(--acc2)}
+.htag{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:rgba(250,247,242,.45)}
+
+.wrap{max-width:1100px;margin:0 auto;padding:36px 24px 80px}
+
+/* CONTROLS */
+.controls{background:white;border:1px solid var(--beige);border-radius:16px;padding:28px 32px;margin-bottom:32px}
+.ctrl-title{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:300;color:var(--green);margin-bottom:4px}
+.ctrl-desc{font-size:13px;color:var(--mut);margin-bottom:24px;line-height:1.5}
+.ctrl-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px}
+.ctrl-field label{font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--acc);display:block;margin-bottom:5px}
+input[type=text],select,textarea{width:100%;background:var(--cream);border:1px solid var(--sand);border-radius:8px;padding:9px 12px;font-family:inherit;font-size:13px;color:var(--txt);outline:none}
+textarea{min-height:60px;resize:vertical}
+.btn-gen{background:var(--green);color:var(--cream);border:none;border-radius:8px;padding:12px 32px;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;transition:background .2s;letter-spacing:.02em}
+.btn-gen:hover{background:var(--green2)}
+.btn-row{display:flex;gap:10px;align-items:center;margin-top:20px;flex-wrap:wrap}
+.btn-sec{background:transparent;color:var(--green);border:1.5px solid var(--green);border-radius:8px;padding:11px 22px;font-family:inherit;font-size:13px;cursor:pointer;transition:all .2s}
+.btn-sec:hover{background:var(--beige)}
+.btn-export{background:var(--brown);color:var(--cream);border:none;border-radius:8px;padding:11px 22px;font-family:inherit;font-size:13px;cursor:pointer;display:none}
+
+/* PILLAR LEGEND */
+.legend{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px}
+.leg-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mut)}
+.leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+
+/* WEEK SECTIONS */
+.week-block{margin-bottom:28px}
+.week-label{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:300;color:var(--green);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--beige);display:flex;align-items:baseline;gap:12px}
+.week-dates{font-size:12px;color:var(--mut);font-family:'DM Sans',sans-serif;font-weight:300}
+
+/* CALENDAR GRID */
+.cal-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.cal-cell{background:white;border:1px solid var(--beige);border-radius:12px;padding:14px;min-height:140px;position:relative;transition:box-shadow .2s;cursor:pointer}
+.cal-cell:hover{box-shadow:0 4px 16px rgba(44,74,62,.1)}
+.cal-cell.empty{background:var(--cream);border:1px dashed var(--sand);cursor:default}
+.cal-cell.empty:hover{box-shadow:none}
+.cell-day{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);margin-bottom:6px}
+.cell-date{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:300;color:var(--green);line-height:1;margin-bottom:8px}
+.cell-pillar{display:inline-block;font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:10px;color:white;margin-bottom:6px;font-weight:500}
+.cell-format{font-size:10px;color:var(--mut);margin-bottom:5px;font-style:italic}
+.cell-topic{font-size:12px;color:var(--txt);line-height:1.45;font-weight:400}
+.cell-funnel{position:absolute;bottom:10px;right:10px;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--sand);font-weight:500}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-bg.open{display:flex}
+.modal{background:white;border-radius:18px;padding:32px;max-width:560px;width:100%;max-height:85vh;overflow-y:auto;position:relative}
+.modal-close{position:absolute;top:16px;right:18px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--mut);line-height:1}
+.modal-pillar{display:inline-block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:3px 10px;border-radius:10px;color:white;margin-bottom:12px;font-weight:500}
+.modal-day{font-size:12px;color:var(--mut);margin-bottom:4px}
+.modal-topic{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:300;color:var(--green);line-height:1.2;margin-bottom:16px}
+.modal-section{margin-bottom:16px}
+.modal-label{font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--acc);margin-bottom:5px}
+.modal-text{font-size:13px;color:var(--txt);line-height:1.65}
+.modal-prompt-box{background:var(--green);border-radius:10px;padding:16px;margin-top:16px}
+.modal-prompt-label{font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:rgba(250,247,242,.5);margin-bottom:8px}
+.modal-prompt-text{font-size:12px;color:var(--cream);line-height:1.7;white-space:pre-wrap;word-wrap:break-word}
+.modal-copy{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:white;padding:7px 16px;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit;margin-top:12px;transition:background .2s}
+.modal-copy:hover{background:rgba(255,255,255,.25)}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:60px 20px;color:var(--mut)}
+.empty-state .big{font-family:'Cormorant Garamond',serif;font-size:42px;font-weight:300;color:var(--sand);margin-bottom:12px}
+.empty-state p{font-size:14px;line-height:1.6}
+
+/* EXPORT TABLE */
+.export-area{display:none;margin-top:24px}
+.export-area.visible{display:block}
+.export-box{background:var(--brown);border-radius:12px;padding:20px 24px;color:var(--cream)}
+.export-box h3{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:300;margin-bottom:8px}
+.export-box p{font-size:12px;opacity:.75;margin-bottom:12px;line-height:1.5}
+.tsv-text{background:rgba(0,0,0,.2);border-radius:8px;padding:12px;font-size:11px;color:rgba(250,247,242,.7);max-height:160px;overflow-y:auto;white-space:pre;font-family:monospace;margin-bottom:12px}
+.copy-tsv{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:white;padding:8px 18px;border-radius:6px;font-size:12px;cursor:pointer;font-family:inherit}
+
+@media(max-width:700px){
+  .ctrl-grid{grid-template-columns:1fr}
+  .cal-grid{grid-template-columns:1fr 1fr}
+  header{padding:0 16px}
+  .wrap{padding:20px 12px 60px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">AVELYST — <em>Content Calendar</em></div>
+  <div class="htag">Phase 1C · 30-Day Planner</div>
+</header>
+
+<div class="wrap">
+
+  <!-- CONTROLS -->
+  <div class="controls">
+    <div class="ctrl-title">30-Day Content <em style="font-style:italic">Calendar Generator</em></div>
+    <div class="ctrl-desc">Fill in your details and generate a full month of content — 5 posts/week, balanced across all 4 pillars, with topics, formats, and ready-to-use prompts for each post.</div>
+
+    <div class="ctrl-grid">
+      <div class="ctrl-field">
+        <label>Start Month</label>
+        <select id="startMonth">
+          <option value="0">January</option><option value="1">February</option><option value="2">March</option>
+          <option value="3">April</option><option value="4">May</option><option value="5">June</option>
+          <option value="6">July</option><option value="7">August</option><option value="8">September</option>
+          <option value="9">October</option><option value="10">November</option><option value="11">December</option>
+        </select>
+      </div>
+      <div class="ctrl-field">
+        <label>Year</label>
+        <select id="startYear">
+          <option value="2025">2025</option><option value="2026" selected>2026</option><option value="2027">2027</option>
+        </select>
+      </div>
+      <div class="ctrl-field">
+        <label>Post Days</label>
+        <select id="postDays">
+          <option value="01234">Mon–Fri</option>
+          <option value="02456">Mon, Wed, Fri, Sat, Sun</option>
+          <option value="01234" selected>Mon–Fri (recommended)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="ctrl-grid">
+      <div class="ctrl-field">
+        <label>Pillar 1 Focus</label>
+        <input type="text" id="p1focus" placeholder="Science of obesity & weight loss" value="Science of obesity & weight loss">
+      </div>
+      <div class="ctrl-field">
+        <label>Pillar 2 Focus</label>
+        <input type="text" id="p2focus" placeholder="Patient transformations & tips" value="Patient transformations & tips">
+      </div>
+      <div class="ctrl-field">
+        <label>Pillar 3 Focus</label>
+        <input type="text" id="p3focus" placeholder="Doctor's perspective" value="Doctor's perspective">
+      </div>
+    </div>
+    <div class="ctrl-grid" style="grid-template-columns:1fr 2fr">
+      <div class="ctrl-field">
+        <label>Pillar 4 Focus</label>
+        <input type="text" id="p4focus" placeholder="Avelyst services" value="Avelyst services">
+      </div>
+      <div class="ctrl-field">
+        <label>Current Campaign / Theme (optional)</label>
+        <input type="text" id="campaign" placeholder="e.g. ช่วงเปิดคลินิก, GLP-1 awareness month, New Year reset...">
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-gen" onclick="generateCalendar()">✦ Generate 30-Day Calendar</button>
+      <button class="btn-sec" id="btnExport" style="display:none" onclick="showExport()">Export to Sheets</button>
+      <button class="btn-sec" id="btnClear" style="display:none" onclick="clearCalendar()">Clear</button>
+    </div>
+  </div>
+
+  <!-- LEGEND -->
+  <div class="legend" id="legend" style="display:none">
+    <div class="leg-item"><div class="leg-dot" style="background:var(--p1)"></div> Pillar 1 — Science</div>
+    <div class="leg-item"><div class="leg-dot" style="background:var(--p2)"></div> Pillar 2 — Transformation & Tips</div>
+    <div class="leg-item"><div class="leg-dot" style="background:var(--p3)"></div> Pillar 3 — Doctor's Perspective</div>
+    <div class="leg-item"><div class="leg-dot" style="background:var(--p4)"></div> Pillar 4 — Services</div>
+  </div>
+
+  <!-- CALENDAR OUTPUT -->
+  <div id="calendarOut">
+    <div class="empty-state">
+      <div class="big">🗓</div>
+      <p>Your 30-day calendar will appear here.<br>Fill in the fields above and click <strong>Generate</strong>.</p>
+    </div>
+  </div>
+
+  <!-- EXPORT AREA -->
+  <div class="export-area" id="exportArea">
+    <div class="export-box">
+      <h3>Export to Google Sheets</h3>
+      <p>Copy the data below → open Google Sheets → click any cell → Ctrl+Shift+V (paste special) → it will fill the columns automatically.</p>
+      <div class="tsv-text" id="tsvText"></div>
+      <button class="copy-tsv" onclick="copyTSV()">Copy for Google Sheets</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL -->
+<div class="modal-bg" id="modalBg" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <button class="modal-close" onclick="closeModalDirect()">✕</button>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<script>
+const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+// Pillar colors
+const PCOLS = ['#2C4A3E','#6B4C3B','#4A6741','#7A5C47'];
+const PFUNNEL = ['Awareness','Interest','Trust','Conversion'];
+
+// Set current month as default
+const now = new Date();
+document.getElementById('startMonth').value = now.getMonth();
+document.getElementById('startYear').value = now.getFullYear();
+
+// CONTENT TEMPLATES
+// Each pillar has topics, formats, and hooks
+const CONTENT_BANK = {
+  // Pillar 1 — Science
+  1: [
+    {topic:"ทำไม metabolism ถึงช้าลงเมื่ออายุมากขึ้น",format:"Carousel (7 slides)",hook:"อายุไม่ใช่แค่ตัวเลข — มันเปลี่ยนวิธีที่ร่างกายเผาผลาญพลังงาน"},
+    {topic:"Insulin resistance คืออะไร และทำไมถึงทำให้ลดน้ำหนักไม่ได้",format:"Reel / TikTok (60s)",hook:"ถ้าคุณลดน้ำหนักไม่ได้ทั้งที่พยายามมาก — นี่อาจเป็นสาเหตุ"},
+    {topic:"ทำไม cardio อย่างเดียวถึงไม่พอ: บทบาทของ muscle mass",format:"Educational post",hook:"คนที่วิ่งทุกวันแต่น้ำหนักไม่ลง มักขาดสิ่งนี้"},
+    {topic:"GLP-1 medications ทำงานอย่างไร — อธิบายแบบเข้าใจง่าย",format:"Carousel (5 slides)",hook:"ยา GLP-1 ไม่ใช่ทางลัด — มันช่วยให้ร่างกายทำงานถูกต้อง"},
+    {topic:"โรค sleep apnea และความสัมพันธ์กับน้ำหนัก",format:"Educational post",hook:"คุณนอนพอแต่ยังเพลีย? ร่างกายอาจกำลังบอกอะไรบางอย่าง"},
+    {topic:"Gut microbiome และการควบคุมน้ำหนัก",format:"Reel / TikTok (60s)",hook:"แบคทีเรียในลำไส้ของคุณมีส่วนในการลดน้ำหนักมากกว่าที่คิด"},
+    {topic:"ทำไม yo-yo dieting ถึงอันตราย: ผลระยะยาวต่อ metabolism",format:"Carousel (6 slides)",hook:"ลดแล้วเด้งซ้ำๆ — ร่างกายคุณกำลังเรียนรู้อะไรบางอย่างที่ไม่ดีเลย"},
+    {topic:"ความสัมพันธ์ระหว่าง stress hormone และน้ำหนัก",format:"Educational post",hook:"ยิ่งพยายามลดน้ำหนักมากขึ้น ยิ่งเครียด ยิ่งลดยาก — วงจรนี้แก้ได้"},
+    {topic:"Protein และ satiety: ทำไมโปรตีนถึงช่วยให้อิ่มนานกว่า",format:"Reel / TikTok (45s)",hook:"เคล็ดลับที่ช่วยให้กินน้อยลงโดยไม่ต้องหิว"},
+    {topic:"BMI vs Body Composition: ตัวเลขไหนสำคัญกว่า",format:"Carousel (5 slides)",hook:"BMI บอกความจริงได้แค่ครึ่งเดียว — ที่เราดูกันจริงๆ คืออะไร"},
+  ],
+  // Pillar 2 — Transformation & Tips
+  2: [
+    {topic:"5 นิสัยเล็กๆ ที่เปลี่ยน metabolism ได้จริง",format:"Carousel (6 slides)",hook:"ไม่ต้องเปลี่ยนชีวิตทั้งหมด — แค่ 5 นิสัยนี้ก็เริ่มได้เลย"},
+    {topic:"วิธีอ่านฉลากอาหารให้เป็น: สิ่งที่ต้องดูจริงๆ",format:"Carousel (7 slides)",hook:"ฉลากอาหารโกหกได้ถ้าคุณไม่รู้จะดูอะไร"},
+    {topic:"Weight training สำหรับมือใหม่: เริ่มต้นอย่างไรให้ปลอดภัย",format:"Reel / TikTok (60s)",hook:"ไม่ต้องยกหนัก ไม่ต้องทุกวัน — แต่ต้องทำสม่ำเสมอ"},
+    {topic:"กินข้าวนอกบ้านอย่างไรให้ยังคุมน้ำหนักได้",format:"Tip post",hook:"ชีวิตสังคมไม่ต้องหยุด เพื่อที่คุณจะลดน้ำหนักได้"},
+    {topic:"Patient journey: จาก 80 กก. สู่สุขภาพที่ดีขึ้นใน 4 เดือน",format:"Carousel (8 slides)",hook:"เธอลองทุกอย่างมาแล้ว จนกระทั่งพบว่าปัญหาจริงๆ คืออะไร"},
+    {topic:"การนอนหลับและน้ำหนัก: ทำไมพักผ่อนไม่พอถึงลดยาก",format:"Educational tip post",hook:"นอนน้อยกว่า 7 ชั่วโมง ร่างกายจะเรียกหาน้ำตาลมากขึ้นโดยอัตโนมัติ"},
+    {topic:"3 สิ่งที่ควรทำก่อนนอนเพื่อช่วย metabolism",format:"Reel / TikTok (45s)",hook:"Routine ก่อนนอน 15 นาที ที่เปลี่ยนการเผาผลาญตลอดคืน"},
+    {topic:"Meal timing: กินเวลาไหนสำคัญแค่ไหน",format:"Carousel (5 slides)",hook:"ไม่ใช่แค่กินอะไร — แต่กินเมื่อไหรก็สำคัญด้วย"},
+    {topic:"Patient journey: ลดน้ำหนักพร้อมควบคุมเบาหวานได้อย่างไร",format:"Carousel (7 slides)",hook:"หมอบอกว่าต้องเพิ่มยา แต่เธอเลือกเส้นทางอีกแบบ"},
+    {topic:"7 สัญญาณว่า metabolism ของคุณต้องการความช่วยเหลือ",format:"Checklist carousel",hook:"ร่างกายบอกคุณอยู่ — คุณแค่ยังไม่รู้ว่าต้องฟังอะไร"},
+  ],
+  // Pillar 3 — Doctor's Perspective
+  3: [
+    {topic:"ในฐานะหมอ: ทำไมฉันถึงเปิดคลินิก weight management",format:"Personal Reel (60s)",hook:"หลังจากดูแลคนไข้ ICU มา 10 ปี ฉันรู้ว่าการรักษาจริงๆ ต้องเริ่มก่อนหน้านั้น"},
+    {topic:"ความเข้าใจผิดที่ฉันเห็นบ่อยที่สุดในคนที่อยากลดน้ำหนัก",format:"Personal post + carousel",hook:"ในฐานะแม่ลูก 3 และหมอ ฉันเห็นทั้งสองด้านของปัญหานี้"},
+    {topic:"ทำไมฉันถึงไม่ prescribe ยาทันทีในทุกเคส",format:"Personal Reel (60s)",hook:"คนไข้หลายคนมาหาฉันหวังได้ยา GLP-1 แต่สิ่งแรกที่เราทำคือ..."},
+    {topic:"สิ่งที่ฉันบอกตัวเองในฐานะแม่ที่ต้องการมีสุขภาพดียืนยาว",format:"Personal post",hook:"ฉันมีลูก 3 คน และอยากอยู่ดูพวกเขาโตนานที่สุดเท่าที่จะเป็นไปได้"},
+    {topic:"Opinion: ทำไม intermittent fasting ไม่เหมาะกับทุกคน",format:"Opinion Reel (60s)",hook:"ฉันไม่แนะนำ IF ให้กับคนไข้ทุกคน — นี่คือเหตุผล"},
+    {topic:"วันทำงานของหมอ weight management เป็นอย่างไร",format:"Behind-the-scenes Reel",hook:"Behind the scenes: วันที่ฉันเห็นคนไข้เปลี่ยนชีวิตได้จริงๆ"},
+    {topic:"ความจริงเกี่ยวกับ supplement ลดน้ำหนักที่ขายออนไลน์",format:"Opinion post",hook:"ในฐานะหมอ ฉันต้องพูดความจริงเรื่องนี้สักที"},
+    {topic:"ทำไมฉันถึงเชื่อว่า muscle mass คือ longevity currency",format:"Personal Reel (60s)",hook:"สิ่งที่ฉันบอกกับคนไข้ทุกคนตั้งแต่วันแรก"},
+    {topic:"ประสบการณ์ที่เปลี่ยนวิธีที่ฉันมองสุขภาพตลอดไป",format:"Personal storytelling post",hook:"คนไข้รายหนึ่งสอนอะไรฉันบางอย่างที่ medical school ไม่เคยสอน"},
+    {topic:"Opinion: Ozempic สำหรับคนที่ไม่ได้เป็นเบาหวาน — ดีหรือแย่?",format:"Balanced opinion Reel",hook:"ทุกคนถามฉันเรื่องนี้ และฉันจะตอบอย่างตรงไปตรงมา"},
+  ],
+  // Pillar 4 — Services
+  4: [
+    {topic:"การ consultation ครั้งแรกที่ Avelyst: คุณจะได้รับอะไรบ้าง",format:"Service intro post",hook:"ไม่ใช่แค่ชั่งน้ำหนักและรับยา — นี่คือสิ่งที่เกิดขึ้นจริงๆ"},
+    {topic:"Metabolic assessment คืออะไร และทำไมถึงสำคัญ",format:"Educational service post",hook:"เราไม่ดูแค่น้ำหนัก — เราดูว่าร่างกายของคุณทำงานอย่างไร"},
+    {topic:"ทำไม Avelyst ถึงต่างจาก weight loss clinic ทั่วไป",format:"Differentiation carousel",hook:"คุณเคยตั้งคำถามว่าทำไมผลถึงไม่ยั่งยืนไหม — นี่คือคำตอบ"},
+    {topic:"Meet the team: dietitian และ movement coach ที่ Avelyst",format:"Team intro post",hook:"การดูแลสุขภาพที่ดีต้องการทีม ไม่ใช่แค่หมอคนเดียว"},
+    {topic:"ถาม-ตอบ: คำถามที่คนถามฉันบ่อยที่สุดก่อนตัดสินใจมาหา",format:"FAQ carousel",hook:"ถ้าคุณกำลังลังเล — อาจเพราะยังไม่ได้คำตอบที่ใช่"},
+  ],
+};
+
+// FORMATS list for prompt generation
+const FORMAT_PROMPTS = {
+  "Carousel (7 slides)": "Create a 7-slide Instagram carousel",
+  "Carousel (8 slides)": "Create an 8-slide Instagram carousel",
+  "Carousel (6 slides)": "Create a 6-slide Instagram carousel",
+  "Carousel (5 slides)": "Create a 5-slide Instagram carousel",
+  "Checklist carousel": "Create a checklist-style Instagram carousel",
+  "Reel / TikTok (60s)": "Write a 60-second Reel/TikTok script",
+  "Reel / TikTok (45s)": "Write a 45-second Reel/TikTok script",
+  "Personal Reel (60s)": "Write a 60-second personal Reel script for Dr. Weeraporn (first person)",
+  "Opinion Reel (60s)": "Write a 60-second opinion/reaction Reel script for Dr. Weeraporn",
+  "Behind-the-scenes Reel": "Write a 45-second behind-the-scenes Reel script",
+  "Balanced opinion Reel": "Write a 60-second balanced medical opinion Reel script",
+  "Educational post": "Write an educational Instagram caption",
+  "Tip post": "Write a practical tips Instagram caption",
+  "Educational tip post": "Write an educational tips Instagram caption",
+  "Personal post": "Write a personal first-person Instagram caption for Dr. Weeraporn",
+  "Personal post + carousel": "Write a personal Instagram caption + 5-slide carousel",
+  "Opinion post": "Write a medical opinion Instagram caption",
+  "Personal storytelling post": "Write a personal storytelling Instagram caption for Dr. Weeraporn",
+  "Service intro post": "Write a service introduction Instagram caption",
+  "Educational service post": "Write an educational service caption",
+  "Differentiation carousel": "Create a 5-slide differentiation carousel",
+  "Team intro post": "Write a team introduction Instagram caption",
+  "FAQ carousel": "Create a 6-slide FAQ carousel",
+};
+
+const SP_SHORT = `[AVELYST BRAND CONTEXT]
+Clinic: Avelyst — physician-led weight & metabolic health clinic, Bangkok
+Doctor: Dr. Weeraporn Srisung, MD — American Board Internal Medicine & Nephrology certified, Obesity Medicine candidate. Mother of 3. Warm, direct, evidence-based.
+Audience: Thai & expat Bangkokians, 40-60, 200K+ THB/month HH income, frustrated by failed diets, want evidence-based care.
+Voice: Warm, honest, non-judgmental, bilingual Thai+English. Never promise rapid results. Core truth: "It's not your fault — it's your biology."
+---
+`;
+
+let calendarData = [];
+
+function generateCalendar() {
+  const month = parseInt(document.getElementById('startMonth').value);
+  const year = parseInt(document.getElementById('startYear').value);
+  const campaign = document.getElementById('campaign').value;
+
+  // Get pillar labels
+  const pillarLabels = [
+    document.getElementById('p1focus').value || 'Science of obesity',
+    document.getElementById('p2focus').value || 'Patient transformations & tips',
+    document.getElementById('p3focus').value || "Doctor's perspective",
+    document.getElementById('p4focus').value || 'Avelyst services',
+  ];
+
+  // Build posting days for the month (Mon-Fri = days 0-4)
+  const postDays = [0,1,2,3,4]; // Mon-Fri indices
+  
+  // Get all dates in month that fall on posting days
+  const postDates = [];
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(year, month, d);
+    const dayOfWeek = (date.getDay() + 6) % 7; // 0=Mon, 6=Sun
+    if (postDays.includes(dayOfWeek)) {
+      postDates.push({date: d, dayOfWeek, dayName: DAYS[dayOfWeek]});
+    }
+  }
+
+  // Take first 20 posting dates (4 weeks × 5 days)
+  const slots = postDates.slice(0, 20);
+
+  // PILLAR DISTRIBUTION for 20 posts (5/week × 4 weeks)
+  // Week pattern: P1, P2, P3, P2, P4 — repeating with variation
+  // Ratio: P1=5, P2=7, P3=5, P4=3 over 20 posts
+  const pillarSequence = [1,2,3,2,4, 1,2,3,2,4, 1,2,3,2,1, 2,3,2,1,4];
+
+  // Counters for content bank rotation
+  const usedIdx = {1:0, 2:0, 3:0, 4:0};
+
+  calendarData = slots.map((slot, i) => {
+    const pillar = pillarSequence[i % pillarSequence.length];
+    const bank = CONTENT_BANK[pillar];
+    const contentIdx = usedIdx[pillar] % bank.length;
+    usedIdx[pillar]++;
+    const content = bank[contentIdx];
+
+    // Inject campaign theme into some posts if provided
+    let topic = content.topic;
+    let hook = content.hook;
+    if (campaign && i % 5 === 2) {
+      // Every 5th post, weave in campaign theme
+      topic = topic + ` (${campaign})`;
+    }
+
+    return {
+      date: slot.date,
+      dayName: slot.dayName,
+      month,
+      year,
+      pillar,
+      pillarLabel: pillarLabels[pillar-1],
+      topic,
+      format: content.format,
+      hook,
+      funnel: PFUNNEL[pillar-1],
+      week: Math.floor(i/5)+1,
+    };
+  });
+
+  renderCalendar(calendarData, month, year, pillarLabels);
+  document.getElementById('legend').style.display='flex';
+  document.getElementById('btnExport').style.display='inline-block';
+  document.getElementById('btnClear').style.display='inline-block';
+}
+
+function renderCalendar(data, month, year, pillarLabels) {
+  // Group by week
+  const weeks = {};
+  data.forEach(d => {
+    if (!weeks[d.week]) weeks[d.week] = [];
+    weeks[d.week].push(d);
+  });
+
+  let html = '';
+  Object.keys(weeks).forEach(wk => {
+    const posts = weeks[wk];
+    const firstDate = posts[0];
+    const lastDate = posts[posts.length-1];
+    html += `<div class="week-block">
+      <div class="week-label">
+        Week ${wk}
+        <span class="week-dates">${MONTHS[month]} ${firstDate.date} – ${lastDate.date}, ${year}</span>
+      </div>
+      <div class="cal-grid">
+        ${posts.map(p => cellHTML(p)).join('')}
+      </div>
+    </div>`;
+  });
+
+  document.getElementById('calendarOut').innerHTML = html;
+}
+
+function cellHTML(p) {
+  const col = PCOLS[p.pillar-1];
+  return `<div class="cal-cell" onclick="openModal(${p.date},${p.month},${p.year})">
+    <div class="cell-day">${p.dayName}</div>
+    <div class="cell-date">${p.date}</div>
+    <div class="cell-pillar" style="background:${col}">P${p.pillar}</div>
+    <div class="cell-format">${p.format}</div>
+    <div class="cell-topic">${p.topic}</div>
+    <div class="cell-funnel">${p.funnel}</div>
+  </div>`;
+}
+
+function openModal(date, month, year) {
+  const post = calendarData.find(p => p.date===date && p.month===month && p.year===year);
+  if (!post) return;
+  const col = PCOLS[post.pillar-1];
+  const formatPrompt = FORMAT_PROMPTS[post.format] || 'Write content';
+  const fullPrompt = `${SP_SHORT}${formatPrompt} about: "${post.topic}"\n\nHook to use or adapt: "${post.hook}"\n\nPillar: ${post.pillarLabel} (Pillar ${post.pillar})\nFunnel stage: ${post.funnel}\n\nFormat requirements:\n- Bilingual Thai (main) + English (below)\n- Include relevant hashtags\n- Avelyst brand voice: warm, evidence-based, non-judgmental\n- Validate the reader's struggle before offering the solution`;
+
+  document.getElementById('modalContent').innerHTML = `
+    <div class="modal-pillar" style="background:${col}">Pillar ${post.pillar} — ${post.pillarLabel}</div>
+    <div class="modal-day">${post.dayName}, ${MONTHS[post.month]} ${post.date}, ${post.year} · ${post.funnel} stage</div>
+    <div class="modal-topic">${post.topic}</div>
+    <div class="modal-section">
+      <div class="modal-label">Format</div>
+      <div class="modal-text">${post.format}</div>
+    </div>
+    <div class="modal-section">
+      <div class="modal-label">Opening Hook</div>
+      <div class="modal-text">"${post.hook}"</div>
+    </div>
+    <div class="modal-prompt-box">
+      <div class="modal-prompt-label">Ready-to-Use Prompt — Copy & Paste into Claude.ai</div>
+      <div class="modal-prompt-text" id="modalPromptText">${fullPrompt}</div>
+      <button class="modal-copy" onclick="copyModalPrompt()">Copy Prompt</button>
+    </div>
+  `;
+  document.getElementById('modalBg').classList.add('open');
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('modalBg')) closeModalDirect();
+}
+function closeModalDirect() {
+  document.getElementById('modalBg').classList.remove('open');
+}
+
+function copyModalPrompt() {
+  const txt = document.getElementById('modalPromptText').textContent;
+  navigator.clipboard.writeText(txt).then(() => {
+    const btn = event.currentTarget;
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy Prompt', 1500);
+  });
+}
+
+function clearCalendar() {
+  calendarData = [];
+  document.getElementById('calendarOut').innerHTML = `<div class="empty-state"><div class="big">🗓</div><p>Your 30-day calendar will appear here.<br>Fill in the fields above and click <strong>Generate</strong>.</p></div>`;
+  document.getElementById('legend').style.display='none';
+  document.getElementById('btnExport').style.display='none';
+  document.getElementById('btnClear').style.display='none';
+  document.getElementById('exportArea').classList.remove('visible');
+}
+
+function showExport() {
+  const header = 'Date\tDay\tPillar\tFormat\tTopic\tHook\tFunnel Stage\tStatus';
+  const rows = calendarData.map(p =>
+    `${MONTHS[p.month]} ${p.date}, ${p.year}\t${p.dayName}\tPillar ${p.pillar} — ${p.pillarLabel}\t${p.format}\t${p.topic}\t${p.hook}\t${p.funnel}\tTo Do`
+  );
+  const tsv = [header, ...rows].join('\n');
+  document.getElementById('tsvText').textContent = tsv;
+  document.getElementById('exportArea').classList.add('visible');
+  document.getElementById('exportArea').scrollIntoView({behavior:'smooth'});
+}
+
+function copyTSV() {
+  const txt = document.getElementById('tsvText').textContent;
+  navigator.clipboard.writeText(txt).then(() => {
+    const btn = event.currentTarget;
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy for Google Sheets', 1800);
+  });
+}
+</script>
+</body>
+</html>
