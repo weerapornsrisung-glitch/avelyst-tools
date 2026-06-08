@@ -188,6 +188,7 @@ function sw(t, btn) {
 }
 
 function getVals() {
+  // extra field handled separately
   const v = {};
   TYPES[cur].f.forEach(f => {
     const el = document.getElementById('fi-' + f.i);
@@ -237,7 +238,10 @@ async function generate() {
 
   const T = TYPES[cur];
   const vals = getVals();
-  const prompt = T.q(vals);
+  const extra = document.getElementById('fi-extra')?.value?.trim();
+  const prompt = T.q(vals) + (extra ? `
+
+Additional ideas to incorporate: ${extra}` : '');
 
   const btn = document.getElementById('btn-gen');
   const loading = document.getElementById('loading');
