@@ -3,1701 +3,279 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Avelyst — AI Prompt Library</title>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<title>Avelyst — Prompt Library</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-:root {
-  --cream: #FAF7F2;
-  --beige: #EDE8DF;
-  --sand: #D6CEBC;
-  --green: #2C4A3E;
-  --green-mid: #3D6357;
-  --green-light: #4A7A68;
-  --brown: #4A3728;
-  --brown-light: #7A5C47;
-  --accent: #8B6F4E;
-  --accent2: #C4956A;
-  --text: #1A1A1A;
-  --muted: #6B6560;
-  --white: #FFFFFF;
-}
-
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
-body {
-  font-family: 'DM Sans', sans-serif;
-  background: var(--cream);
-  color: var(--text);
-  min-height: 100vh;
-}
-
-/* ── HEADER ── */
-header {
-  background: var(--green);
-  padding: 0 48px;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  min-height: 72px;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-.logo {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 20px;
-  font-weight: 300;
-  color: var(--cream);
-  letter-spacing: 0.1em;
-}
-.logo em { font-style: italic; color: var(--accent2); }
-.header-tag {
-  font-size: 11px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: rgba(250,247,242,0.5);
-}
-
-/* ── LAYOUT ── */
-.layout {
-  display: grid;
-  grid-template-columns: 260px 1fr;
-  min-height: calc(100vh - 72px);
-}
-
-/* ── SIDEBAR ── */
-.sidebar {
-  background: var(--brown);
-  padding: 28px 0;
-  position: sticky;
-  top: 72px;
-  height: calc(100vh - 72px);
-  overflow-y: auto;
-}
-.sidebar-section {
-  margin-bottom: 6px;
-}
-.sidebar-heading {
-  font-size: 10px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: rgba(250,247,242,0.4);
-  padding: 14px 24px 6px;
-}
-.sidebar-btn {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 10px 24px;
-  background: none;
-  border: none;
-  color: rgba(250,247,242,0.75);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 13px;
-  cursor: pointer;
-  text-align: left;
-  transition: all 0.15s;
-  border-left: 2px solid transparent;
-}
-.sidebar-btn:hover {
-  background: rgba(255,255,255,0.07);
-  color: var(--cream);
-}
-.sidebar-btn.active {
-  background: rgba(255,255,255,0.1);
-  color: var(--cream);
-  border-left-color: var(--accent2);
-}
-.sidebar-icon {
-  font-size: 15px;
-  width: 20px;
-  text-align: center;
-  flex-shrink: 0;
-}
-.sidebar-count {
-  margin-left: auto;
-  background: rgba(255,255,255,0.12);
-  border-radius: 10px;
-  padding: 1px 7px;
-  font-size: 10px;
-  color: rgba(250,247,242,0.5);
-}
-
-/* ── MAIN ── */
-.main {
-  padding: 40px 48px 80px;
-  max-width: 900px;
-}
-
-.page { display: none; }
-.page.active { display: block; }
-
-.page-header {
-  margin-bottom: 32px;
-  padding-bottom: 24px;
-  border-bottom: 1px solid var(--beige);
-}
-.page-title {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 36px;
-  font-weight: 300;
-  color: var(--green);
-  line-height: 1.1;
-}
-.page-title em { font-style: italic; }
-.page-desc {
-  margin-top: 8px;
-  font-size: 14px;
-  color: var(--muted);
-  line-height: 1.6;
-  max-width: 580px;
-}
-
-/* ── PROMPT CARDS ── */
-.prompts-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.prompt-card {
-  background: white;
-  border: 1px solid var(--beige);
-  border-radius: 16px;
-  overflow: hidden;
-  transition: box-shadow 0.2s;
-}
-.prompt-card:hover { box-shadow: 0 4px 20px rgba(44,74,62,0.08); }
-
-.prompt-card-header {
-  padding: 18px 24px 14px;
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  cursor: pointer;
-  user-select: none;
-}
-.prompt-emoji {
-  font-size: 22px;
-  line-height: 1;
-  margin-top: 2px;
-  flex-shrink: 0;
-}
-.prompt-meta { flex: 1; }
-.prompt-name {
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--text);
-  margin-bottom: 3px;
-}
-.prompt-subtitle {
-  font-size: 12px;
-  color: var(--muted);
-}
-.prompt-tags {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  margin-top: 6px;
-}
-.tag {
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  padding: 2px 8px;
-  border-radius: 10px;
-  background: var(--beige);
-  color: var(--accent);
-  font-weight: 500;
-}
-.tag.green { background: #E8F0EE; color: var(--green); }
-.tag.brown { background: #F0EBE6; color: var(--brown); }
-.expand-icon {
-  color: var(--sand);
-  font-size: 18px;
-  transition: transform 0.2s;
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-.prompt-card.open .expand-icon { transform: rotate(180deg); }
-
-.prompt-body {
-  display: none;
-  padding: 0 24px 24px;
-  border-top: 1px solid var(--beige);
-}
-.prompt-card.open .prompt-body { display: block; }
-
-/* INPUTS IN CARD */
-.input-row {
-  display: grid;
-  gap: 12px;
-  margin: 16px 0 14px;
-}
-.input-row.cols-2 { grid-template-columns: 1fr 1fr; }
-
-.field-label {
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--accent);
-  margin-bottom: 5px;
-}
-input[type="text"], textarea, select {
-  width: 100%;
-  background: var(--cream);
-  border: 1px solid var(--sand);
-  border-radius: 8px;
-  padding: 9px 13px;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 13px;
-  color: var(--text);
-  outline: none;
-  transition: border-color 0.2s;
-  resize: vertical;
-}
-input[type="text"]:focus, textarea:focus, select:focus {
-  border-color: var(--green);
-}
-textarea { min-height: 64px; }
-
-.btn-row {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  margin-top: 4px;
-}
-.btn-gen {
-  background: var(--green);
-  color: var(--cream);
-  border: none;
-  border-radius: 8px;
-  padding: 10px 22px;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.2s;
-  letter-spacing: 0.02em;
-}
-.btn-gen:hover { background: var(--green-mid); }
-.btn-gen:disabled { opacity: 0.45; cursor: not-allowed; }
-.btn-copy {
-  background: transparent;
-  color: var(--green);
-  border: 1.5px solid var(--green);
-  border-radius: 8px;
-  padding: 9px 18px;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: none;
-}
-.btn-copy:hover { background: var(--beige); }
-
-/* OUTPUT */
-.output-area {
-  margin-top: 16px;
-  background: var(--green);
-  border-radius: 12px;
-  padding: 20px 24px;
-  display: none;
-  position: relative;
-}
-.output-area.visible { display: block; }
-.output-label {
-  font-size: 10px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: rgba(250,247,242,0.5);
-  margin-bottom: 10px;
-}
-.output-text {
-  font-size: 13px;
-  color: var(--cream);
-  line-height: 1.75;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-}
-.loading-indicator {
-  font-size: 13px;
-  color: rgba(250,247,242,0.6);
-  font-style: italic;
-  display: none;
-}
-.loading-indicator.visible { display: block; }
-
-/* ── HOME PAGE ── */
-.home-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-top: 8px;
-}
-.home-card {
-  background: white;
-  border: 1px solid var(--beige);
-  border-radius: 14px;
-  padding: 24px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.home-card:hover {
-  border-color: var(--green);
-  box-shadow: 0 4px 16px rgba(44,74,62,0.1);
-  transform: translateY(-2px);
-}
-.home-card-icon { font-size: 28px; margin-bottom: 12px; }
-.home-card-title {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 20px;
-  font-weight: 400;
-  color: var(--green);
-  margin-bottom: 6px;
-}
-.home-card-desc { font-size: 13px; color: var(--muted); line-height: 1.5; }
-.home-card-count {
-  margin-top: 14px;
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--accent);
-}
-
-.system-prompt-box {
-  background: var(--brown);
-  border-radius: 14px;
-  padding: 24px 28px;
-  margin-top: 24px;
-  color: var(--cream);
-}
-.system-prompt-box h3 {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 18px;
-  font-weight: 300;
-  margin-bottom: 10px;
-}
-.system-prompt-box p { font-size: 13px; opacity: 0.8; margin-bottom: 14px; line-height: 1.6; }
-.sp-text {
-  background: rgba(0,0,0,0.2);
-  border-radius: 8px;
-  padding: 14px 16px;
-  font-size: 12px;
-  line-height: 1.7;
-  opacity: 0.85;
-  white-space: pre-wrap;
-  max-height: 180px;
-  overflow-y: auto;
-  margin-bottom: 12px;
-}
-.btn-copy-sp {
-  background: rgba(255,255,255,0.15);
-  border: 1px solid rgba(255,255,255,0.25);
-  color: white;
-  padding: 8px 18px;
-  border-radius: 7px;
-  font-size: 12px;
-  cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
-  transition: background 0.2s;
-}
-.btn-copy-sp:hover { background: rgba(255,255,255,0.25); }
-
-@media (max-width: 700px) {
-  header { padding: 0 20px; }
-  .layout { grid-template-columns: 1fr; }
-  .sidebar { position: static; height: auto; }
-  .main { padding: 24px 20px 60px; }
-  .home-grid { grid-template-columns: 1fr; }
-  .input-row.cols-2 { grid-template-columns: 1fr; }
-}
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--cream:#FAF7F2;--beige:#EDE8DF;--sand:#D6CEBC;--green:#2C4A3E;--green2:#3D6357;--brown:#4A3728;--acc:#8B6F4E;--acc2:#C4956A;--txt:#1A1A1A;--mut:#6B6560}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--txt);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+header{background:var(--green);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:52px;flex-shrink:0}
+.logo{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:300;color:var(--cream);letter-spacing:.1em}
+.logo em{font-style:italic;color:var(--acc2)}
+.htag{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:rgba(250,247,242,.45)}
+.layout{display:flex;flex:1;overflow:hidden}
+.sidebar{background:var(--brown);width:190px;flex-shrink:0;overflow-y:auto;padding:16px 0}
+.sg{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:rgba(250,247,242,.4);padding:10px 18px 4px}
+.sb{display:flex;align-items:center;gap:7px;width:100%;padding:8px 18px;background:none;border:none;border-left:2px solid transparent;color:rgba(250,247,242,.7);font-family:inherit;font-size:12px;cursor:pointer;text-align:left;transition:all .15s}
+.sb.active{background:rgba(255,255,255,.1);color:var(--cream);border-left-color:var(--acc2)}
+.sb:hover:not(.active){background:rgba(255,255,255,.06);color:var(--cream)}
+.main{flex:1;overflow-y:auto;padding:24px 32px 48px}
+.ptitle{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;color:var(--green);margin-bottom:4px}
+.pdesc{font-size:12px;color:var(--mut);line-height:1.6;max-width:520px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--beige)}
+.notice{background:#E8F0EE;border:1px solid #b2d0c8;border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:12px;color:var(--green);line-height:1.6}
+.notice strong{font-weight:500}
+.card{background:white;border:1px solid var(--beige);border-radius:12px;margin-bottom:12px;overflow:hidden}
+.ch{padding:13px 16px 10px;display:flex;align-items:flex-start;gap:10px;cursor:pointer;user-select:none}
+.cn{font-size:13px;font-weight:500;margin-bottom:2px}
+.cs{font-size:11px;color:var(--mut)}
+.tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+.tag{font-size:9px;letter-spacing:.05em;text-transform:uppercase;padding:2px 6px;border-radius:8px;background:var(--beige);color:var(--acc);font-weight:500}
+.arr{color:var(--sand);font-size:14px;transition:transform .2s;flex-shrink:0;margin-top:2px}
+.cb{padding:0 16px 16px;border-top:1px solid var(--beige);display:none}
+.cb.open{display:block}
+.fl{font-size:9px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--acc);margin:12px 0 3px;display:block}
+input[type=text],textarea,select{width:100%;background:var(--cream);border:1px solid var(--sand);border-radius:6px;padding:7px 10px;font-family:inherit;font-size:12px;color:var(--txt);outline:none;resize:vertical}
+textarea{min-height:60px}
+.br{display:flex;gap:7px;align-items:center;margin-top:10px;flex-wrap:wrap}
+.bgen{background:var(--green);color:var(--cream);border:none;border-radius:6px;padding:8px 18px;font-family:inherit;font-size:12px;font-weight:500;cursor:pointer}
+.bgen:hover{background:var(--green2)}
+.bcopy{background:transparent;color:var(--green);border:1.5px solid var(--green);border-radius:6px;padding:7px 14px;font-family:inherit;font-size:11px;cursor:pointer;display:none}
+.bopen{background:var(--acc2);color:white;border:none;border-radius:6px;padding:7px 14px;font-family:inherit;font-size:11px;cursor:pointer;display:none;text-decoration:none;font-weight:500}
+.out{margin-top:12px;background:var(--brown);border-radius:9px;padding:14px 16px;display:none}
+.ol{font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:rgba(250,247,242,.45);margin-bottom:7px}
+.ot{font-size:12px;color:var(--cream);line-height:1.75;white-space:pre-wrap;word-wrap:break-word;max-height:300px;overflow-y:auto}
+.step{margin-top:10px;font-size:11px;color:rgba(250,247,242,.7);line-height:1.6;border-top:1px solid rgba(255,255,255,.1);padding-top:10px}
+.step strong{color:var(--acc2)}
 </style>
 </head>
 <body>
-
 <header>
-  <div>
-    <div class="logo">AVELYST — <em>Prompt Library</em></div>
-  </div>
-  <div class="header-tag">Phase 1B · Content Factory</div>
+  <div class="logo">AVELYST — <em>Prompt Library</em></div>
+  <div class="htag">Phase 1B · Content Factory</div>
 </header>
-
 <div class="layout">
-
-  <!-- SIDEBAR -->
-  <aside class="sidebar">
-    <div class="sidebar-section">
-      <div class="sidebar-heading">Navigation</div>
-      <button class="sidebar-btn active" onclick="showPage('home')">
-        <span class="sidebar-icon">🏠</span> Home
-      </button>
-    </div>
-    <div class="sidebar-section">
-      <div class="sidebar-heading">Content Creation</div>
-      <button class="sidebar-btn" onclick="showPage('hooks')">
-        <span class="sidebar-icon">🪝</span> Hooks & Openers
-        <span class="sidebar-count">5</span>
-      </button>
-      <button class="sidebar-btn" onclick="showPage('scripts')">
-        <span class="sidebar-icon">🎬</span> Video Scripts
-        <span class="sidebar-count">4</span>
-      </button>
-      <button class="sidebar-btn" onclick="showPage('captions')">
-        <span class="sidebar-icon">✍️</span> Captions
-        <span class="sidebar-count">4</span>
-      </button>
-      <button class="sidebar-btn" onclick="showPage('carousels')">
-        <span class="sidebar-icon">📱</span> Carousel Slides
-        <span class="sidebar-count">3</span>
-      </button>
-    </div>
-    <div class="sidebar-section">
-      <div class="sidebar-heading">Conversion</div>
-      <button class="sidebar-btn" onclick="showPage('ctas')">
-        <span class="sidebar-icon">📣</span> CTAs
-        <span class="sidebar-count">4</span>
-      </button>
-      <button class="sidebar-btn" onclick="showPage('stories')">
-        <span class="sidebar-icon">💬</span> Patient Stories
-        <span class="sidebar-count">3</span>
-      </button>
-    </div>
-    <div class="sidebar-section">
-      <div class="sidebar-heading">Research</div>
-      <button class="sidebar-btn" onclick="showPage('repurpose')">
-        <span class="sidebar-icon">♻️</span> Repurpose Content
-        <span class="sidebar-count">3</span>
-      </button>
-      <button class="sidebar-btn" onclick="showPage('research')">
-        <span class="sidebar-icon">🔬</span> Research → Post
-        <span class="sidebar-count">2</span>
-      </button>
-    </div>
-  </aside>
-
-  <!-- MAIN CONTENT -->
-  <main class="main">
-
-    <!-- HOME -->
-    <div class="page active" id="page-home">
-      <div class="page-header">
-        <div class="page-title">Your AI <em>Prompt Library</em></div>
-        <div class="page-desc">Pre-built prompts for every content type — all pre-loaded with Avelyst's brand, voice, and audience. Fill in the variables, click Generate, done.</div>
-      </div>
-
-      <div class="home-grid">
-        <div class="home-card" onclick="showPage('hooks')">
-          <div class="home-card-icon">🪝</div>
-          <div class="home-card-title">Hooks & Openers</div>
-          <div class="home-card-desc">First lines that stop the scroll — for Reels, TikTok, and carousel covers.</div>
-          <div class="home-card-count">5 prompts</div>
-        </div>
-        <div class="home-card" onclick="showPage('scripts')">
-          <div class="home-card-icon">🎬</div>
-          <div class="home-card-title">Video Scripts</div>
-          <div class="home-card-desc">Full Reels/TikTok scripts with hook, body, and CTA — 30–90 seconds.</div>
-          <div class="home-card-count">4 prompts</div>
-        </div>
-        <div class="home-card" onclick="showPage('captions')">
-          <div class="home-card-icon">✍️</div>
-          <div class="home-card-title">Captions</div>
-          <div class="home-card-desc">Bilingual Thai/English captions for every content pillar.</div>
-          <div class="home-card-count">4 prompts</div>
-        </div>
-        <div class="home-card" onclick="showPage('carousels')">
-          <div class="home-card-icon">📱</div>
-          <div class="home-card-title">Carousel Slides</div>
-          <div class="home-card-desc">Slide-by-slide copy for educational and storytelling carousels.</div>
-          <div class="home-card-count">3 prompts</div>
-        </div>
-        <div class="home-card" onclick="showPage('ctas')">
-          <div class="home-card-icon">📣</div>
-          <div class="home-card-title">CTAs</div>
-          <div class="home-card-desc">Calls-to-action that convert — soft, medium, and direct versions.</div>
-          <div class="home-card-count">4 prompts</div>
-        </div>
-        <div class="home-card" onclick="showPage('repurpose')">
-          <div class="home-card-icon">♻️</div>
-          <div class="home-card-title">Repurpose Content</div>
-          <div class="home-card-desc">Turn one piece of content into 5 different formats instantly.</div>
-          <div class="home-card-count">3 prompts</div>
-        </div>
-      </div>
-
-      <div class="system-prompt-box">
-        <h3>📋 Master System Prompt</h3>
-        <p>Paste this at the start of any AI session (Claude, ChatGPT) to activate Avelyst brand mode. All prompts in this library already include it automatically.</p>
-        <div class="sp-text" id="masterSystemPrompt">You are a content strategist and medical copywriter for Avelyst, a physician-led weight management and metabolic health clinic in Bangkok, Thailand.
-
-The founding physician is Dr. Weeraporn Srisung, MD — American Board of Internal Medicine and Nephrology certified, and American Board of Obesity Medicine candidate. She is a mother of three with a warm, direct, evidence-based communication style. She speaks fluently in Thai and English.
-
-Avelyst's target audience is Thai and expat Bangkokians aged 40–60, household income 200K+ THB/month, who are frustrated by failed diet attempts and want a credible, medically rigorous solution.
-
-Content should always:
-- Feel warm, honest, and personal — like advice from a trusted doctor friend
-- Be backed by science but explained simply
-- Validate the patient's struggle before offering solutions
-- Use bilingual Thai/English format
-- Avoid sensationalism, rapid-result promises, or competitor attacks
-- Match one of four content pillars: (1) Science of Obesity, (2) Patient Transformations & Tips, (3) Doctor's Perspective, (4) Avelyst Services
-
-Core emotional truth: "It's not your fault — it's your biology. And we can help."</div>
-        <button class="btn-copy-sp" onclick="copySystemPrompt()">Copy System Prompt</button>
-      </div>
-    </div>
-
-    <!-- HOOKS PAGE -->
-    <div class="page" id="page-hooks">
-      <div class="page-header">
-        <div class="page-title">Hooks & <em>Openers</em></div>
-        <div class="page-desc">The first 1–2 lines that stop someone from scrolling. Your hook determines 80% of whether anyone watches the rest. Use these for Reels covers, TikTok openers, and carousel slide 1.</div>
-      </div>
-      <div class="prompts-grid">
-
-        <div class="prompt-card" id="card-h1">
-          <div class="prompt-card-header" onclick="toggleCard('h1')">
-            <div class="prompt-emoji">😤</div>
-            <div class="prompt-meta">
-              <div class="prompt-name">Pain Point Hook</div>
-              <div class="prompt-subtitle">Calls out a specific frustration your audience has</div>
-              <div class="prompt-tags">
-                <span class="tag green">Pillar 1 & 2</span>
-                <span class="tag">Awareness</span>
-                <span class="tag brown">High reach</span>
-              </div>
-            </div>
-            <div class="expand-icon">▾</div>
-          </div>
-          <div class="prompt-body">
-            <div class="input-row">
-              <div>
-                <div class="field-label">The pain point</div>
-                <input type="text" id="h1-pain" placeholder="e.g. ลดน้ำหนักไม่ได้ ทั้งที่กินน้อย ออกกำลังกายทุกวัน">
-              </div>
-            </div>
-            <div class="btn-row">
-              <button class="btn-gen" onclick="generate('h1')">✦ Generate Hooks</button>
-              <button class="btn-copy" id="copy-h1" onclick="copyOutput('h1')">Copy</button>
-            </div>
-            <div class="loading-indicator" id="loading-h1">กำลังสร้าง hooks…</div>
-            <div class="output-area" id="output-h1">
-              <div class="output-label">Generated Hooks</div>
-              <div class="output-text" id="text-h1"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="prompt-card" id="card-h2">
-          <div class="prompt-card-header" onclick="toggleCard('h2')">
-            <div class="prompt-emoji">🔬</div>
-            <div class="prompt-meta">
-              <div class="prompt-name">Science Myth-Bust Hook</div>
-              <div class="prompt-subtitle">Challenges a common belief with a surprising fact</div>
-              <div class="prompt-tags">
-                <span class="tag green">Pillar 1</span>
-                <span class="tag">Authority</span>
-                <span class="tag brown">High shares</span>
-              </div>
-            </div>
-            <div class="expand-icon">▾</div>
-          </div>
-          <div class="prompt-body">
-            <div class="input-row cols-2">
-              <div>
-                <div class="field-label">Common myth / belief</div>
-                <input type="text" id="h2-myth" placeholder="e.g. กินน้อย + ออกกำลังกายมาก = ผอม">
-              </div>
-              <div>
-                <div class="field-label">The truth</div>
-                <input type="text" id="h2-truth" placeholder="e.g. cortisol และ muscle loss ทำให้ metabolism พัง">
-              </div>
-            </div>
-            <div class="btn-row">
-              <button class="btn-gen" onclick="generate('h2')">✦ Generate Hooks</button>
-              <button class="btn-copy" id="copy-h2" onclick="copyOutput('h2')">Copy</button>
-            </div>
-            <div class="loading-indicator" id="loading-h2">กำลังสร้าง hooks…</div>
-            <div class="output-area" id="output-h2">
-              <div class="output-label">Generated Hooks</div>
-              <div class="output-text" id="text-h2"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="prompt-card" id="card-h3">
-          <div class="prompt-card-header" onclick="toggleCard('h3')">
-            <div class="prompt-emoji">👩‍⚕️</div>
-            <div class="prompt-meta">
-              <div class="prompt-name">Doctor's Personal Take Hook</div>
-              <div class="prompt-subtitle">"As a doctor / As a mom of 3..." — builds personal brand</div>
-              <div class="prompt-tags">
-                <span class="tag green">Pillar 3</span>
-                <span class="tag">Trust</span>
-              </div>
-            </div>
-            <div class="expand-icon">▾</div>
-          </div>
-          <div class="prompt-body">
-            <div class="input-row">
-              <div>
-                <div class="field-label">Topic / opinion</div>
-                <input type="text" id="h3-topic" placeholder="e.g. ทำไมฉันถึงไม่แนะนำ intermittent fasting ให้กับคนไข้ทุกคน">
-              </div>
-            </div>
-            <div class="btn-row">
-              <button class="btn-gen" onclick="generate('h3')">✦ Generate Hooks</button>
-              <button class="btn-copy" id="copy-h3" onclick="copyOutput('h3')">Copy</button>
-            </div>
-            <div class="loading-indicator" id="loading-h3">กำลังสร้าง hooks…</div>
-            <div class="output-area" id="output-h3">
-              <div class="output-label">Generated Hooks</div>
-              <div class="output-text" id="text-h3"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="prompt-card" id="card-h4">
-          <div class="prompt-card-header" onclick="toggleCard('h4')">
-            <div class="prompt-emoji">📊</div>
-            <div class="prompt-meta">
-              <div class="prompt-name">Statistic / Research Hook</div>
-              <div class="prompt-subtitle">Lead with a surprising number or research finding</div>
-              <div class="prompt-tags">
-                <span class="tag green">Pillar 1</span>
-                <span class="tag brown">High saves</span>
-              </div>
-            </div>
-            <div class="expand-icon">▾</div>
-          </div>
-          <div class="prompt-body">
-            <div class="input-row">
-              <div>
-                <div class="field-label">Stat or research finding</div>
-                <input type="text" id="h4-stat" placeholder="e.g. 95% ของคนที่ลดน้ำหนักด้วยการ diet อย่างเดียว จะได้น้ำหนักกลับคืนภายใน 5 ปี">
-              </div>
-            </div>
-            <div class="btn-row">
-              <button class="btn-gen" onclick="generate('h4')">✦ Generate Hooks</button>
-              <button class="btn-copy" id="copy-h4" onclick="copyOutput('h4')">Copy</button>
-            </div>
-            <div class="loading-indicator" id="loading-h4">กำลังสร้าง hooks…</div>
-            <div class="output-area" id="output-h4">
-              <div class="output-label">Generated Hooks</div>
-              <div class="output-text" id="text-h4"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="prompt-card" id="card-h5">
-          <div class="prompt-card-header" onclick="toggleCard('h5')">
-            <div class="prompt-emoji">🎯</div>
-            <div class="prompt-meta">
-              <div class="prompt-name">Audience Identification Hook</div>
-              <div class="prompt-subtitle">"If you've ever..." — makes the viewer feel directly spoken to</div>
-              <div class="prompt-tags">
-                <span class="tag">All pillars</span>
-                <span class="tag brown">High engagement</span>
-              </div>
-            </div>
-            <div class="expand-icon">▾</div>
-          </div>
-          <div class="prompt-body">
-            <div class="input-row">
-              <div>
-                <div class="field-label">Situation / experience to identify with</div>
-                <input type="text" id="h5-situation" placeholder="e.g. พยายามลดน้ำหนักมาหลายปีแต่ไม่สำเร็จ ทั้งที่ตั้งใจมากแค่ไหน">
-              </div>
-            </div>
-            <div class="btn-row">
-              <button class="btn-gen" onclick="generate('h5')">✦ Generate Hooks</button>
-              <button class="btn-copy" id="copy-h5" onclick="copyOutput('h5')">Copy</button>
-            </div>
-            <div class="loading-indicator" id="loading-h5">กำลังสร้าง hooks…</div>
-            <div class="output-area" id="output-h5">
-              <div class="output-label">Generated Hooks</div>
-              <div class="output-text" id="text-h5"></div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- SCRIPTS PAGE -->
-    <div class="page" id="page-scripts">
-      <div class="page-header">
-        <div class="page-title">Video <em>Scripts</em></div>
-        <div class="page-desc">Full scripts for Reels, TikTok, and YouTube Shorts. Each one has a hook, structured body, and a clear CTA. Target: 30–90 seconds when spoken.</div>
-      </div>
-      <div class="prompts-grid">
-
-        <div class="prompt-card" id="card-s1">
-          <div class="prompt-card-header" onclick="toggleCard('s1')">
-            <div class="prompt-emoji">🎓</div>
-            <div class="prompt-meta">
-              <div class="prompt-name">Educational Explainer Script</div>
-              <div class="prompt-subtitle">Explain a medical concept simply — Pillar 1 content</div>
-              <div class="prompt-tags"><span class="tag green">Pillar 1</span><span class="tag">Authority</span></div>
-            </div>
-            <div class="expand-icon">▾</div>
-          </div>
-          <div class="prompt-body">
-            <div class="input-row cols-2">
-              <div>
-                <div class="field-label">Topic / concept</div>
-                <input type="text" id="s1-topic" placeholder="e.g. Insulin resistance">
-              </div>
-              <div>
-                <div class="field-label">Length (seconds)</div>
-                <select id="s1-length">
-                  <option>30 seconds</option>
-                  <option selected>60 seconds</option>
-                  <option>90 seconds</option>
-                </select>
-              </div>
-            </div>
-            <div class="input-row">
-              <div>
-                <div class="field-label">Key message / takeaway</div>
-                <input type="text" id="s1-message" placeholder="e.g. อาหารที่คุณกินไม่ใช่ปัญหาเดียว — ฮอร์โมนต่างหากที่ต้องแก้">
-              </div>
-            </div>
-            <div class="btn-row">
-              <button class="btn-gen" onclick="generate('s1')">✦ Generate Script</button>
-              <button class="btn-copy" id="copy-s1" onclick="copyOutput('s1')">Copy</button>
-            </div>
-            <div class="loading-indicator" id="loading-s1">กำลังเขียน script…</div>
-            <div class="output-area" id="output-s1">
-              <div class="output-label">Generated Script</div>
-              <div class="output-text" id="text-s1"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="prompt-card" id="card-s2">
-          <div class="prompt-card-header" onclick="toggleCard('s2')">
-            <div class="prompt-emoji">🔥</div>
-            <div class="prompt-meta">
-              <div class="prompt-name">Myth-Busting Script</div>
-              <div class="prompt-subtitle">Debunk a widespread health belief with evidence</div>
-              <div class="prompt-tags"><span class="tag green">Pillar 1</span><span class="tag brown">High shares</span></div>
-            </div>
-            <div class="expand-icon">▾</div>
-          </div>
-          <div class="prompt-body">
-            <div class="input-row cols-2">
-              <div>
-                <div class="field-label">The myth</div>
-                <input type="text" id="s2-myth" placeholder="e.g. ออกกำลังกาย cardio เยอะๆ คือวิธีลดน้ำหนักที่ดีที่สุด">
-              </div>
-              <div>
-                <div class="field-label">The truth</div>
-                <input type="text" id="s2-truth" placeholder="e.g. Weight training สร้าง muscle mass ที่เพิ่ม resting metabolism ได้ดีกว่า">
-              </div>
-            </div>
-            <div class="btn-row">
-              <button class="btn-gen" onclick="generate('s2')">✦ Generate Script</button>
-              <button class="btn-copy" id="copy-s2" onclick="copyOutput('s2')">Copy</button>
-            </div>
-            <div class="loading-indicator" id="loading-s2">กำลังเขียน script…</div>
-            <div class="output-area" id="output-s2">
-              <div class="output-label">Generated Script</div>
-              <div class="output-text" id="text-s2"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="prompt-card" id="card-s3">
-          <div class="prompt-card-header" onclick="toggleCard('s3')">
-            <div class="prompt-emoji">💡</div>
-            <div class="prompt-meta">
-              <div class="prompt-name">Tip List Script ("3 things…")</div>
-              <div class="prompt-subtitle">Practical, actionable tips — high save rate</div>
-              <div class="prompt-tags"><span class="tag green">Pillar 2</span><span class="tag brown">High saves</span></div>
-            </div>
-            <div class="expand-icon">▾</div>
-          </div>
-          <div class="prompt-body">
-            <div class="input-row cols-2">
-              <div>
-                <div class="field-label">Topic</div>
-                <input type="text" id="s3-topic" placeholder="e.g. นิสัยที่ทำให้ metabolism ดีขึ้น">
-              </div>
-              <div>
-                <div class="field-label">Number of tips</div>
-                <select id="s3-num">
-                  <option>3</option>
-                  <option selected>5</option>
-                  <option>7</option>
-                </select>
-              </div>
-            </div>
-            <div class="btn-row">
-              <button class="btn-gen" onclick="generate('s3')">✦ Generate Script</button>
-              <button class="btn-copy" id="copy-s3" onclick="copyOutput('s3')">Copy</button>
-            </div>
-            <div class="loading-indicator" id="loading-s3">กำลังเขียน script…</div>
-            <div class="output-area" id="output-s3">
-              <div class="output-label">Generated Script</div>
-              <div class="output-text" id="text-s3"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="prompt-card" id="card-s4">
-          <div class="prompt-card-header" onclick="toggleCard('s4')">
-            <div class="prompt-emoji">🩺</div>
-            <div class="prompt-meta">
-              <div class="prompt-name">Doctor's Story / Opinion Script</div>
-              <div class="prompt-subtitle">Personal perspective from Dr. Weeraporn — builds brand</div>
-              <div class="prompt-tags"><span class="tag green">Pillar 3</span><span class="tag">Personal brand</span></div>
-            </div>
-            <div class="expand-icon">▾</div>
-          </div>
-          <div class="prompt-body">
-            <div class="input-row">
-              <div>
-                <div class="field-label">Story or opinion topic</div>
-                <input type="text" id="s4-topic" placeholder="e.g. ทำไมฉันถึงเปิดคลินิก weight management หลังจากดูแลคนไข้ ICU มา 10 ปี">
-              </div>
-            </div>
-            <div class="input-row">
-              <div>
-                <div class="field-label">Key emotion / feeling to evoke</div>
-                <input type="text" id="s4-emotion" placeholder="e.g. ความหวัง, การได้รับการ validate ว่ามันไม่ใช่ความผิดของเขา">
-              </div>
-            </div>
-            <div class="btn-row">
-              <button class="btn-gen" onclick="generate('s4')">✦ Generate Script</button>
-              <button class="btn-copy" id="copy-s4" onclick="copyOutput('s4')">Copy</button>
-            </div>
-            <div class="loading-indicator" id="loading-s4">กำลังเขียน script…</div>
-            <div class="output-area" id="output-s4">
-              <div class="output-label">Generated Script</div>
-              <div class="output-text" id="text-s4"></div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- CAPTIONS PAGE -->
-    <div class="page" id="page-captions">
-      <div class="page-header">
-        <div class="page-title">Instagram / Facebook <em>Captions</em></div>
-        <div class="page-desc">Bilingual Thai+English captions with hashtags. All follow Avelyst's storytelling-first, science-backed voice.</div>
-      </div>
-      <div class="prompts-grid">
-
-        <div class="prompt-card" id="card-c1">
-          <div class="prompt-card-header" onclick="toggleCard('c1')">
-            <div class="prompt-emoji">📖</div>
-            <div class="prompt-meta">
-              <div class="prompt-name">Educational Caption (Pillar 1)</div>
-              <div class="prompt-subtitle">Science-backed post with a clear takeaway</div>
-              <div class="prompt-tags"><span class="tag green">Pillar 1</span><span class="tag brown">High saves</span></div>
-            </div>
-            <div class="expand-icon">▾</div>
-          </div>
-          <div class="prompt-body">
-            <div class="input-row cols-2">
-              <div>
-                <div class="field-label">Topic</div>
-                <input type="text" id="c1-topic" placeholder="e.g. GLP-1 medications และวิธีที่มันทำงาน">
-              </div>
-              <div>
-                <div class="field-label">Key takeaway for reader</div>
-                <input type="text" id="c1-takeaway" placeholder="e.g. ยาไม่ใช่ทางลัด — มันช่วยให้ body ทำงานได้ถูกต้อง">
-              </div>
-            </div>
-            <div class="btn-row">
-              <button class="btn-gen" onclick="generate('c1')">✦ Generate Caption</button>
-              <button class="btn-copy" id="copy-c1" onclick="copyOutput('c1')">Copy</button>
-            </div>
-            <div class="loading-indicator" id="loading-c1">กำลังเขียน caption…</div>
-            <div class="output-area" id="output-c1">
-              <div class="output-label">Generated Caption (TH + EN)</div>
-              <div class="output-text" id="text-c1"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="prompt-card" id="card-c2">
-          <div class="prompt-card-header" onclick="toggleCard('c2')">
-            <div class="prompt-emoji">💪</div>
-            <div class="prompt-meta">
-              <div class="prompt-name">Transformation / Tip Caption (Pillar 2)</div>
-              <div class="prompt-subtitle">Practical and inspiring — with a real-life tip</div>
-              <div class="prompt-tags"><span class="tag green">Pillar 2</span><span class="tag">Inspiration</span></div>
-            </div>
-            <div class="expand-icon">▾</div>
-          </div>
-          <div class="prompt-body">
-            <div class="input-row">
-              <div>
-                <div class="field-label">Tip or transformation theme</div>
-                <input type="text" id="c2-tip" placeholder="e.g. การเพิ่ม protein ทุกมื้อเปลี่ยน body composition อย่างไร">
-              </div>
-            </div>
-            <div class="btn-row">
-              <button class="btn-gen" onclick="generate('c2')">✦ Generate Caption</button>
-              <button class="btn-copy" id="copy-c2" onclick="copyOutput('c2')">Copy</button>
-            </div>
-            <div class="loading-indicator" id="loading-c2">กำลังเขียน caption…</div>
-            <div class="output-area" id="output-c2">
-              <div class="output-label">Generated Caption (TH + EN)</div>
-              <div class="output-text" id="text-c2"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="prompt-card" id="card-c3">
-          <div class="prompt-card-header" onclick="toggleCard('c3')">
-            <div class="prompt-emoji">🧡</div>
-            <div class="prompt-meta">
-              <div class="prompt-name">Doctor's Personal Caption (Pillar 3)</div>
-              <div class="prompt-subtitle">Personal, first-person post from Dr. Weeraporn</div>
-              <div class="prompt-tags"><span class="tag green">Pillar 3</span><span class="tag">Personal brand</span></div>
-            </div>
-            <div class="expand-icon">▾</div>
-          </div>
-          <div class="prompt-body">
-            <div class="input-row">
-              <div>
-                <div class="field-label">What do you want to share / say?</div>
-                <textarea id="c3-share" placeholder="e.g. ฉันเป็นหมอที่ดูแลคนไข้ ICU มาหลายปี และสิ่งที่ทำให้ฉันเปิดคลินิกนี้คือการเห็นว่า..."></textarea>
-              </div>
-            </div>
-            <div class="btn-row">
-              <button class="btn-gen" onclick="generate('c3')">✦ Generate Caption</button>
-              <button class="btn-copy" id="copy-c3" onclick="copyOutput('c3')">Copy</button>
-            </div>
-            <div class="loading-indicator" id="loading-c3">กำลังเขียน caption…</div>
-            <div class="output-area" id="output-c3">
-              <div class="output-label">Generated Caption (TH + EN)</div>
-              <div class="output-text" id="text-c3"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="prompt-card" id="card-c4">
-          <div class="prompt-card-header" onclick="toggleCard('c4')">
-            <div class="prompt-emoji">🏥</div>
-            <div class="prompt-meta">
-              <div class="prompt-name">Service / CTA Caption (Pillar 4)</div>
-              <div class="prompt-subtitle">Introduce a service or invite booking — warm, not salesy</div>
-              <div class="prompt-tags"><span class="tag green">Pillar 4</span><span class="tag brown">Conversion</span></div>
-            </div>
-            <div class="expand-icon">▾</div>
-          </div>
-          <div class="prompt-body">
-            <div class="input-row cols-2">
-              <div>
-                <div class="field-label">Service to highlight</div>
-                <input type="text" id="c4-service" placeholder="e.g. Initial consultation + metabolic assessment">
-              </div>
-              <div>
-                <div class="field-label">Desired action</div>
-                <input type="text" id="c4-action" placeholder="e.g. DM หรือ LINE เพื่อนัดพบ">
-              </div>
-            </div>
-            <div class="btn-row">
-              <button class="btn-gen" onclick="generate('c4')">✦ Generate Caption</button>
-              <button class="btn-copy" id="copy-c4" onclick="copyOutput('c4')">Copy</button>
-            </div>
-            <div class="loading-indicator" id="loading-c4">กำลังเขียน caption…</div>
-            <div class="output-area" id="output-c4">
-              <div class="output-label">Generated Caption (TH + EN)</div>
-              <div class="output-text" id="text-c4"></div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- CAROUSELS PAGE -->
-    <div class="page" id="page-carousels">
-      <div class="page-header">
-        <div class="page-title">Carousel <em>Slide Copy</em></div>
-        <div class="page-desc">Slide-by-slide text for Instagram/Facebook carousels. Each prompt gives you cover slide through CTA slide — ready to hand to your designer.</div>
-      </div>
-      <div class="prompts-grid">
-
-        <div class="prompt-card" id="card-cr1">
-          <div class="prompt-card-header" onclick="toggleCard('cr1')">
-            <div class="prompt-emoji">🧠</div>
-            <div class="prompt-meta">
-              <div class="prompt-name">Educational Carousel (5–7 slides)</div>
-              <div class="prompt-subtitle">Teach something valuable, slide by slide</div>
-              <div class="prompt-tags"><span class="tag green">Pillar 1 & 2</span><span class="tag brown">High saves</span></div>
-            </div>
-            <div class="expand-icon">▾</div>
-          </div>
-          <div class="prompt-body">
-            <div class="input-row cols-2">
-              <div>
-                <div class="field-label">Topic</div>
-                <input type="text" id="cr1-topic" placeholder="e.g. ทำไม metabolism ถึงช้าลงเมื่ออายุมากขึ้น">
-              </div>
-              <div>
-                <div class="field-label">Number of slides</div>
-                <select id="cr1-slides">
-                  <option>5 slides</option>
-                  <option selected>7 slides</option>
-                  <option>9 slides</option>
-                </select>
-              </div>
-            </div>
-            <div class="btn-row">
-              <button class="btn-gen" onclick="generate('cr1')">✦ Generate Slides</button>
-              <button class="btn-copy" id="copy-cr1" onclick="copyOutput('cr1')">Copy</button>
-            </div>
-            <div class="loading-indicator" id="loading-cr1">กำลังสร้าง slides…</div>
-            <div class="output-area" id="output-cr1">
-              <div class="output-label">Slide-by-Slide Copy</div>
-              <div class="output-text" id="text-cr1"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="prompt-card" id="card-cr2">
-          <div class="prompt-card-header" onclick="toggleCard('cr2')">
-            <div class="prompt-emoji">✅</div>
-            <div class="prompt-meta">
-              <div class="prompt-name">Checklist / Tips Carousel</div>
-              <div class="prompt-subtitle">"X things to do / avoid" — highest save rate format</div>
-              <div class="prompt-tags"><span class="tag green">Pillar 2</span><span class="tag brown">Viral potential</span></div>
-            </div>
-            <div class="expand-icon">▾</div>
-          </div>
-          <div class="prompt-body">
-            <div class="input-row cols-2">
-              <div>
-                <div class="field-label">Checklist topic</div>
-                <input type="text" id="cr2-topic" placeholder="e.g. 7 สัญญาณที่บอกว่า metabolism ของคุณมีปัญหา">
-              </div>
-              <div>
-                <div class="field-label">Format</div>
-                <select id="cr2-format">
-                  <option>Things to DO</option>
-                  <option>Things to AVOID</option>
-                  <option selected>Warning signs</option>
-                  <option>Questions to ask</option>
-                </select>
-              </div>
-            </div>
-            <div class="btn-row">
-              <button class="btn-gen" onclick="generate('cr2')">✦ Generate Slides</button>
-              <button class="btn-copy" id="copy-cr2" onclick="copyOutput('cr2')">Copy</button>
-            </div>
-            <div class="loading-indicator" id="loading-cr2">กำลังสร้าง slides…</div>
-            <div class="output-area" id="output-cr2">
-              <div class="output-label">Slide-by-Slide Copy</div>
-              <div class="output-text" id="text-cr2"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="prompt-card" id="card-cr3">
-          <div class="prompt-card-header" onclick="toggleCard('cr3')">
-            <div class="prompt-emoji">🌟</div>
-            <div class="prompt-meta">
-              <div class="prompt-name">Patient Journey Carousel</div>
-              <div class="prompt-subtitle">Storytelling arc: struggle → discovery → transformation</div>
-              <div class="prompt-tags"><span class="tag green">Pillar 2 & 4</span><span class="tag">Conversion</span></div>
-            </div>
-            <div class="expand-icon">▾</div>
-          </div>
-          <div class="prompt-body">
-            <div class="input-row">
-              <div>
-                <div class="field-label">Patient profile (anonymised)</div>
-                <textarea id="cr3-profile" placeholder="e.g. ผู้หญิงอายุ 45 ปี ลูก 2 คน พยายามลดน้ำหนักมา 5 ปี ออกกำลังกาย กินน้อย แต่ไม่สำเร็จ เพราะ insulin resistance ที่ยังไม่ได้รับการแก้ไข"></textarea>
-              </div>
-            </div>
-            <div class="btn-row">
-              <button class="btn-gen" onclick="generate('cr3')">✦ Generate Slides</button>
-              <button class="btn-copy" id="copy-cr3" onclick="copyOutput('cr3')">Copy</button>
-            </div>
-            <div class="loading-indicator" id="loading-cr3">กำลังสร้าง slides…</div>
-            <div class="output-area" id="output-cr3">
-              <div class="output-label">Slide-by-Slide Copy</div>
-              <div class="output-text" id="text-cr3"></div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- CTAS PAGE -->
-    <div class="page" id="page-ctas">
-      <div class="page-header">
-        <div class="page-title">Calls to <em>Action</em></div>
-        <div class="page-desc">CTAs for every stage of the funnel — from soft engagement to direct booking. Never pushy, always warm.</div>
-      </div>
-      <div class="prompts-grid">
-
-        <div class="prompt-card" id="card-cta1">
-          <div class="prompt-card-header" onclick="toggleCard('cta1')">
-            <div class="prompt-emoji">💬</div>
-            <div class="prompt-meta">
-              <div class="prompt-name">Soft CTA (Save / Comment)</div>
-              <div class="prompt-subtitle">For awareness stage — low commitment ask</div>
-              <div class="prompt-tags"><span class="tag">Awareness</span><span class="tag">Engagement</span></div>
-            </div>
-            <div class="expand-icon">▾</div>
-          </div>
-          <div class="prompt-body">
-            <div class="input-row">
-              <div>
-                <div class="field-label">Content topic this CTA goes with</div>
-                <input type="text" id="cta1-topic" placeholder="e.g. โพสต์เกี่ยวกับทำไม diet อย่างเดียวถึงไม่ work">
-              </div>
-            </div>
-            <div class="btn-row">
-              <button class="btn-gen" onclick="generate('cta1')">✦ Generate CTAs</button>
-              <button class="btn-copy" id="copy-cta1" onclick="copyOutput('cta1')">Copy</button>
-            </div>
-            <div class="loading-indicator" id="loading-cta1">กำลังสร้าง CTA…</div>
-            <div class="output-area" id="output-cta1">
-              <div class="output-label">Generated CTAs</div>
-              <div class="output-text" id="text-cta1"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="prompt-card" id="card-cta2">
-          <div class="prompt-card-header" onclick="toggleCard('cta2')">
-            <div class="prompt-emoji">📩</div>
-            <div class="prompt-meta">
-              <div class="prompt-name">Medium CTA (DM / LINE)</div>
-              <div class="prompt-subtitle">Interest/trust stage — invite a conversation</div>
-              <div class="prompt-tags"><span class="tag">Interest</span><span class="tag brown">Lead gen</span></div>
-            </div>
-            <div class="expand-icon">▾</div>
-          </div>
-          <div class="prompt-body">
-            <div class="input-row">
-              <div>
-                <div class="field-label">What should they message about?</div>
-                <input type="text" id="cta2-about" placeholder="e.g. ถามเกี่ยวกับ initial consultation หรือ metabolic assessment">
-              </div>
-            </div>
-            <div class="btn-row">
-              <button class="btn-gen" onclick="generate('cta2')">✦ Generate CTAs</button>
-              <button class="btn-copy" id="copy-cta2" onclick="copyOutput('cta2')">Copy</button>
-            </div>
-            <div class="loading-indicator" id="loading-cta2">กำลังสร้าง CTA…</div>
-            <div class="output-area" id="output-cta2">
-              <div class="output-label">Generated CTAs</div>
-              <div class="output-text" id="text-cta2"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="prompt-card" id="card-cta3">
-          <div class="prompt-card-header" onclick="toggleCard('cta3')">
-            <div class="prompt-emoji">📅</div>
-            <div class="prompt-meta">
-              <div class="prompt-name">Direct Booking CTA</div>
-              <div class="prompt-subtitle">For trust/booking stage — clear, warm, specific</div>
-              <div class="prompt-tags"><span class="tag brown">Conversion</span><span class="tag">Booking</span></div>
-            </div>
-            <div class="expand-icon">▾</div>
-          </div>
-          <div class="prompt-body">
-            <div class="input-row cols-2">
-              <div>
-                <div class="field-label">Service being offered</div>
-                <input type="text" id="cta3-service" placeholder="e.g. Initial consultation + metabolic assessment">
-              </div>
-              <div>
-                <div class="field-label">Any urgency / offer (optional)</div>
-                <input type="text" id="cta3-urgency" placeholder="e.g. รับจำนวนจำกัด / ช่วงเวลาพิเศษ">
-              </div>
-            </div>
-            <div class="btn-row">
-              <button class="btn-gen" onclick="generate('cta3')">✦ Generate CTAs</button>
-              <button class="btn-copy" id="copy-cta3" onclick="copyOutput('cta3')">Copy</button>
-            </div>
-            <div class="loading-indicator" id="loading-cta3">กำลังสร้าง CTA…</div>
-            <div class="output-area" id="output-cta3">
-              <div class="output-label">Generated CTAs</div>
-              <div class="output-text" id="text-cta3"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="prompt-card" id="card-cta4">
-          <div class="prompt-card-header" onclick="toggleCard('cta4')">
-            <div class="prompt-emoji">🔁</div>
-            <div class="prompt-meta">
-              <div class="prompt-name">Loyalty / Referral CTA</div>
-              <div class="prompt-subtitle">For existing patients — encourage sharing and referrals</div>
-              <div class="prompt-tags"><span class="tag">Loyalty</span><span class="tag">Word of mouth</span></div>
-            </div>
-            <div class="expand-icon">▾</div>
-          </div>
-          <div class="prompt-body">
-            <div class="input-row">
-              <div>
-                <div class="field-label">Context (what result or milestone to celebrate)</div>
-                <input type="text" id="cta4-context" placeholder="e.g. คนไข้ที่ลดน้ำหนักได้ตามเป้าและอยากให้เพื่อนมาด้วย">
-              </div>
-            </div>
-            <div class="btn-row">
-              <button class="btn-gen" onclick="generate('cta4')">✦ Generate CTAs</button>
-              <button class="btn-copy" id="copy-cta4" onclick="copyOutput('cta4')">Copy</button>
-            </div>
-            <div class="loading-indicator" id="loading-cta4">กำลังสร้าง CTA…</div>
-            <div class="output-area" id="output-cta4">
-              <div class="output-label">Generated CTAs</div>
-              <div class="output-text" id="text-cta4"></div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- PATIENT STORIES PAGE -->
-    <div class="page" id="page-stories">
-      <div class="page-header">
-        <div class="page-title">Patient <em>Stories</em></div>
-        <div class="page-desc">Turn real patient journeys into compelling, ethical content. Always anonymised unless the patient has explicitly consented.</div>
-      </div>
-      <div class="prompts-grid">
-
-        <div class="prompt-card" id="card-ps1">
-          <div class="prompt-card-header" onclick="toggleCard('ps1')">
-            <div class="prompt-emoji">📝</div>
-            <div class="prompt-meta">
-              <div class="prompt-name">Patient Story — Short Caption Version</div>
-              <div class="prompt-subtitle">150–200 word story for feed post</div>
-              <div class="prompt-tags"><span class="tag green">Pillar 2</span><span class="tag">Social proof</span></div>
-            </div>
-            <div class="expand-icon">▾</div>
-          </div>
-          <div class="prompt-body">
-            <div class="input-row">
-              <div>
-                <div class="field-label">Patient background (anonymised)</div>
-                <textarea id="ps1-bg" placeholder="e.g. หญิง 48 ปี บริหาร มีเบาหวาน ลองลดน้ำหนักมาหลายปี ไม่ประสบผล..."></textarea>
-              </div>
-            </div>
-            <div class="input-row">
-              <div>
-                <div class="field-label">Key result / turning point</div>
-                <input type="text" id="ps1-result" placeholder="e.g. หลัง 3 เดือนกับ Avelyst น้ำหนักลด 8 กก. HbA1c ดีขึ้น ไม่ต้องเพิ่มยาเบาหวาน">
-              </div>
-            </div>
-            <div class="btn-row">
-              <button class="btn-gen" onclick="generate('ps1')">✦ Generate Story</button>
-              <button class="btn-copy" id="copy-ps1" onclick="copyOutput('ps1')">Copy</button>
-            </div>
-            <div class="loading-indicator" id="loading-ps1">กำลังเขียน story…</div>
-            <div class="output-area" id="output-ps1">
-              <div class="output-label">Generated Patient Story</div>
-              <div class="output-text" id="text-ps1"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="prompt-card" id="card-ps2">
-          <div class="prompt-card-header" onclick="toggleCard('ps2')">
-            <div class="prompt-emoji">🎥</div>
-            <div class="prompt-meta">
-              <div class="prompt-name">Patient Story — Video Script Version</div>
-              <div class="prompt-subtitle">Script for doctor to narrate a patient journey on camera</div>
-              <div class="prompt-tags"><span class="tag green">Pillar 2 & 3</span><span class="tag brown">High conversion</span></div>
-            </div>
-            <div class="expand-icon">▾</div>
-          </div>
-          <div class="prompt-body">
-            <div class="input-row">
-              <div>
-                <div class="field-label">Patient story details</div>
-                <textarea id="ps2-story" placeholder="e.g. ชาย 52 ปี น้ำหนัก 110 กก. มีความดันและไขมันสูง ลองหลายวิธีแล้ว มาหาเราเพราะเชื่อในการแพทย์ที่มีหลักฐาน..."></textarea>
-              </div>
-            </div>
-            <div class="btn-row">
-              <button class="btn-gen" onclick="generate('ps2')">✦ Generate Script</button>
-              <button class="btn-copy" id="copy-ps2" onclick="copyOutput('ps2')">Copy</button>
-            </div>
-            <div class="loading-indicator" id="loading-ps2">กำลังเขียน script…</div>
-            <div class="output-area" id="output-ps2">
-              <div class="output-label">Generated Story Script</div>
-              <div class="output-text" id="text-ps2"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="prompt-card" id="card-ps3">
-          <div class="prompt-card-header" onclick="toggleCard('ps3')">
-            <div class="prompt-emoji">💌</div>
-            <div class="prompt-meta">
-              <div class="prompt-name">Testimonial Polish</div>
-              <div class="prompt-subtitle">Take a raw review and turn it into publishable content</div>
-              <div class="prompt-tags"><span class="tag green">Pillar 4</span><span class="tag">Trust</span></div>
-            </div>
-            <div class="expand-icon">▾</div>
-          </div>
-          <div class="prompt-body">
-            <div class="input-row">
-              <div>
-                <div class="field-label">Raw review / testimonial text</div>
-                <textarea id="ps3-raw" placeholder="วางรีวิวดิบๆ จากคนไข้ที่นี่..."></textarea>
-              </div>
-            </div>
-            <div class="btn-row">
-              <button class="btn-gen" onclick="generate('ps3')">✦ Polish Testimonial</button>
-              <button class="btn-copy" id="copy-ps3" onclick="copyOutput('ps3')">Copy</button>
-            </div>
-            <div class="loading-indicator" id="loading-ps3">กำลัง polish…</div>
-            <div class="output-area" id="output-ps3">
-              <div class="output-label">Polished Testimonial</div>
-              <div class="output-text" id="text-ps3"></div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- REPURPOSE PAGE -->
-    <div class="page" id="page-repurpose">
-      <div class="page-header">
-        <div class="page-title"><em>Repurpose</em> Content</div>
-        <div class="page-desc">Turn one piece of content into multiple formats. One article = 5 posts. One Reel = 3 captions + a carousel. Maximum output, minimum extra work.</div>
-      </div>
-      <div class="prompts-grid">
-
-        <div class="prompt-card" id="card-rp1">
-          <div class="prompt-card-header" onclick="toggleCard('rp1')">
-            <div class="prompt-emoji">📄</div>
-            <div class="prompt-meta">
-              <div class="prompt-name">Article / Blog → 5 Social Posts</div>
-              <div class="prompt-subtitle">Paste any article and get 5 different post formats</div>
-              <div class="prompt-tags"><span class="tag">All pillars</span><span class="tag brown">High efficiency</span></div>
-            </div>
-            <div class="expand-icon">▾</div>
-          </div>
-          <div class="prompt-body">
-            <div class="input-row">
-              <div>
-                <div class="field-label">Paste article / blog text (or paste the URL topic)</div>
-                <textarea id="rp1-article" placeholder="วาง article, blog post, หรือสรุปงานวิจัยที่นี่..." style="min-height:100px"></textarea>
-              </div>
-            </div>
-            <div class="btn-row">
-              <button class="btn-gen" onclick="generate('rp1')">✦ Repurpose into 5 Posts</button>
-              <button class="btn-copy" id="copy-rp1" onclick="copyOutput('rp1')">Copy</button>
-            </div>
-            <div class="loading-indicator" id="loading-rp1">กำลัง repurpose…</div>
-            <div class="output-area" id="output-rp1">
-              <div class="output-label">5 Repurposed Posts</div>
-              <div class="output-text" id="text-rp1"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="prompt-card" id="card-rp2">
-          <div class="prompt-card-header" onclick="toggleCard('rp2')">
-            <div class="prompt-emoji">🎙️</div>
-            <div class="prompt-meta">
-              <div class="prompt-name">Video Transcript → Caption + Carousel</div>
-              <div class="prompt-subtitle">Turn a Reel or talk transcript into written content</div>
-              <div class="prompt-tags"><span class="tag">All pillars</span></div>
-            </div>
-            <div class="expand-icon">▾</div>
-          </div>
-          <div class="prompt-body">
-            <div class="input-row">
-              <div>
-                <div class="field-label">Paste video transcript or spoken content</div>
-                <textarea id="rp2-transcript" placeholder="วาง transcript ของ video หรือ Reel ที่นี่..." style="min-height:100px"></textarea>
-              </div>
-            </div>
-            <div class="btn-row">
-              <button class="btn-gen" onclick="generate('rp2')">✦ Generate Caption + Carousel</button>
-              <button class="btn-copy" id="copy-rp2" onclick="copyOutput('rp2')">Copy</button>
-            </div>
-            <div class="loading-indicator" id="loading-rp2">กำลัง repurpose…</div>
-            <div class="output-area" id="output-rp2">
-              <div class="output-label">Caption + Carousel Copy</div>
-              <div class="output-text" id="text-rp2"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="prompt-card" id="card-rp3">
-          <div class="prompt-card-header" onclick="toggleCard('rp3')">
-            <div class="prompt-emoji">🔬</div>
-            <div class="prompt-meta">
-              <div class="prompt-name">Research Paper → Patient-Friendly Post</div>
-              <div class="prompt-subtitle">Make complex studies understandable and shareable</div>
-              <div class="prompt-tags"><span class="tag green">Pillar 1</span><span class="tag brown">Authority</span></div>
-            </div>
-            <div class="expand-icon">▾</div>
-          </div>
-          <div class="prompt-body">
-            <div class="input-row">
-              <div>
-                <div class="field-label">Research findings (paste abstract or key findings)</div>
-                <textarea id="rp3-research" placeholder="e.g. Study: Semaglutide reduced body weight by 15% vs 2.4% placebo over 68 weeks. Key mechanism: GLP-1 receptor agonism reduces appetite and slows gastric emptying..." style="min-height:100px"></textarea>
-              </div>
-            </div>
-            <div class="btn-row">
-              <button class="btn-gen" onclick="generate('rp3')">✦ Translate to Patient Content</button>
-              <button class="btn-copy" id="copy-rp3" onclick="copyOutput('rp3')">Copy</button>
-            </div>
-            <div class="loading-indicator" id="loading-rp3">กำลังแปลงงานวิจัย…</div>
-            <div class="output-area" id="output-rp3">
-              <div class="output-label">Patient-Friendly Post</div>
-              <div class="output-text" id="text-rp3"></div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- RESEARCH PAGE -->
-    <div class="page" id="page-research">
-      <div class="page-header">
-        <div class="page-title">Research → <em>Post</em></div>
-        <div class="page-desc">Convert medical research and guidelines into accessible, trustworthy content — maintaining scientific accuracy while being readable by a non-medical audience.</div>
-      </div>
-      <div class="prompts-grid">
-
-        <div class="prompt-card" id="card-re1">
-          <div class="prompt-card-header" onclick="toggleCard('re1')">
-            <div class="prompt-emoji">📚</div>
-            <div class="prompt-meta">
-              <div class="prompt-name">Guideline Summary Post</div>
-              <div class="prompt-subtitle">Turn clinical guidelines into a readable patient post</div>
-              <div class="prompt-tags"><span class="tag green">Pillar 1</span><span class="tag">Authority</span></div>
-            </div>
-            <div class="expand-icon">▾</div>
-          </div>
-          <div class="prompt-body">
-            <div class="input-row">
-              <div>
-                <div class="field-label">Guideline / medical recommendation</div>
-                <textarea id="re1-guideline" placeholder="e.g. AHA 2023 guidelines recommend at least 150 min moderate activity per week for cardiovascular health and weight maintenance. For weight loss, 200-300 min/week is suggested..."></textarea>
-              </div>
-            </div>
-            <div class="input-row">
-              <div>
-                <div class="field-label">Target format</div>
-                <select id="re1-format">
-                  <option>Instagram caption</option>
-                  <option>Carousel (5 slides)</option>
-                  <option selected>Both caption + carousel</option>
-                  <option>Short video script</option>
-                </select>
-              </div>
-            </div>
-            <div class="btn-row">
-              <button class="btn-gen" onclick="generate('re1')">✦ Generate Post</button>
-              <button class="btn-copy" id="copy-re1" onclick="copyOutput('re1')">Copy</button>
-            </div>
-            <div class="loading-indicator" id="loading-re1">กำลังแปลง guideline…</div>
-            <div class="output-area" id="output-re1">
-              <div class="output-label">Generated Post</div>
-              <div class="output-text" id="text-re1"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="prompt-card" id="card-re2">
-          <div class="prompt-card-header" onclick="toggleCard('re2')">
-            <div class="prompt-emoji">⚖️</div>
-            <div class="prompt-meta">
-              <div class="prompt-name">Balanced Medical Opinion Post</div>
-              <div class="prompt-subtitle">Cover a trending health topic with nuance and evidence</div>
-              <div class="prompt-tags"><span class="tag green">Pillar 1 & 3</span><span class="tag brown">High engagement</span></div>
-            </div>
-            <div class="expand-icon">▾</div>
-          </div>
-          <div class="prompt-body">
-            <div class="input-row">
-              <div>
-                <div class="field-label">Trending topic / controversy</div>
-                <input type="text" id="re2-topic" placeholder="e.g. Ozempic สำหรับคนที่ไม่ได้เป็นเบาหวาน — ดีหรือแย่?">
-              </div>
-            </div>
-            <div class="input-row">
-              <div>
-                <div class="field-label">Dr. Weeraporn's actual stance</div>
-                <textarea id="re2-stance" placeholder="e.g. มันมีประโยชน์ในผู้ที่มีข้อบ่งชี้ที่เหมาะสม แต่ต้องอยู่ภายใต้การดูแลของแพทย์ ไม่ใช่ซื้อเองออนไลน์"></textarea>
-              </div>
-            </div>
-            <div class="btn-row">
-              <button class="btn-gen" onclick="generate('re2')">✦ Generate Opinion Post</button>
-              <button class="btn-copy" id="copy-re2" onclick="copyOutput('re2')">Copy</button>
-            </div>
-            <div class="loading-indicator" id="loading-re2">กำลังเขียน opinion…</div>
-            <div class="output-area" id="output-re2">
-              <div class="output-label">Generated Opinion Post</div>
-              <div class="output-text" id="text-re2"></div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-  </main>
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main" id="main"></main>
 </div>
-
 <script>
-const SYSTEM_PROMPT = `You are a content strategist and medical copywriter for Avelyst, a physician-led weight management and metabolic health clinic in Bangkok, Thailand.
+const SP = `You are a content strategist and medical copywriter for Avelyst, a physician-led weight management and metabolic health clinic in Bangkok, Thailand.
 
-The founding physician is Dr. Weeraporn Srisung, MD — American Board of Internal Medicine and Nephrology certified, and American Board of Obesity Medicine candidate. She is a mother of three with a warm, direct, evidence-based communication style. She speaks fluently in Thai and English.
+Founding physician: Dr. Weeraporn Srisung, MD — American Board of Internal Medicine & Nephrology certified, American Board of Obesity Medicine candidate. Mother of three. Warm, direct, evidence-based. Fluent Thai & English.
 
-Target audience: Thai and expat Bangkokians aged 40–60, household income 200K+ THB/month, frustrated by failed diets, want evidence-based medical care.
+Target audience: Thai and expat Bangkokians, 40–60, household income 200K+ THB/month, frustrated by failed diets, want evidence-based medical care.
 
-Brand voice: Warm, honest, evidence-based, non-judgmental, conversational. Like a brilliant doctor who is also your trusted friend.
+Brand voice: Warm, honest, non-judgmental, conversational — like a brilliant doctor who is also your trusted friend.
 
-Content rules:
-- Validate the patient's struggle before offering solutions
-- Back claims with science, explained simply
-- Use bilingual Thai/English format (Thai main, English secondary or both together)
-- Never promise rapid results or shame patients
-- Never attack competitors
-- Core emotional truth: "It's not your fault — it's your biology. And we can help."`;
+Rules: Validate struggle before solutions. Science-backed but simple. Bilingual Thai+English. Never promise rapid results or shame patients. Never attack competitors. Core truth: "It's not your fault — it's your biology. And we can help."
 
-const PROMPTS = {
-  h1: (v) => `${SYSTEM_PROMPT}\n\nWrite 5 scroll-stopping HOOKS (first 1-2 lines only) for a social media video about this pain point: "${v['h1-pain']}"\n\nFormat: numbered list, each hook in Thai with English translation below it. Make them emotionally resonant and specific. Avoid generic lines.`,
-  h2: (v) => `${SYSTEM_PROMPT}\n\nWrite 5 myth-busting HOOKS for a post that challenges this common belief:\nMyth: "${v['h2-myth']}"\nTruth: "${v['h2-truth']}"\n\nFormat: numbered list, each hook in Thai with English translation. Create intrigue and surprise. Mix styles: question hooks, statement hooks, "stop doing X" hooks.`,
-  h3: (v) => `${SYSTEM_PROMPT}\n\nWrite 5 personal-voice HOOKS for Dr. Weeraporn to use on a post about: "${v['h3-topic']}"\n\nStart some with "ในฐานะหมอ..." or "ในฐานะแม่ลูก 3..." or "หลังจากดูแลคนไข้มา 10 ปี..."\nFormat: numbered list, Thai + English translation.`,
-  h4: (v) => `${SYSTEM_PROMPT}\n\nWrite 5 data-driven HOOKS based on this stat/finding: "${v['h4-stat']}"\n\nMake the number feel surprising and relevant to someone trying to lose weight. Format: numbered list, Thai + English.`,
-  h5: (v) => `${SYSTEM_PROMPT}\n\nWrite 5 "identification" HOOKS for this situation: "${v['h5-situation']}"\n\nStart with "ถ้าคุณเคย..." or "คุณเป็นคนที่..." or "สำหรับคนที่..."\nFormat: numbered list, Thai + English. Make viewers feel deeply understood.`,
+---
 
-  s1: (v) => `${SYSTEM_PROMPT}\n\nWrite a ${v['s1-length']} spoken video script explaining: "${v['s1-topic']}"\nKey message: "${v['s1-message']}"\n\nStructure: Hook (5 sec) → Problem setup → Simple explanation with analogy → Key takeaway → Soft CTA\nFormat: [HOOK] [BODY] [TAKEAWAY] [CTA] labels. Write in Thai with natural, conversational spoken language. Add English translation at the end.`,
-  s2: (v) => `${SYSTEM_PROMPT}\n\nWrite a 60-second myth-busting video script.\nMyth: "${v['s2-myth']}"\nTruth: "${v['s2-truth']}"\n\nStructure: Strong hook → State the myth → "Here's what the science actually says" → Simple explanation → Practical implication → CTA\nWrite in Thai (spoken, casual). Add English at the end.`,
-  s3: (v) => `${SYSTEM_PROMPT}\n\nWrite a "${v['s3-num']} things about ${v['s3-topic']}" video script — 45–60 seconds spoken.\n\nStructure: Hook → Quick intro → List each point with 1 sentence explanation → Strong closing line + CTA\nWrite in Thai (energetic, warm). English translation at the end.`,
-  s4: (v) => `${SYSTEM_PROMPT}\n\nWrite a personal video script from Dr. Weeraporn about: "${v['s4-topic']}"\nEmotion to evoke: "${v['s4-emotion']}"\n\nTone: First person, honest, like talking to a friend. She's a mother of 3 and a doctor — both identities should come through.\nStructure: Personal hook → Story/experience → Insight/lesson → How this connects to Avelyst → Warm CTA\nWrite in Thai, conversational. English at the end.`,
+`;
 
-  c1: (v) => `${SYSTEM_PROMPT}\n\nWrite a bilingual Thai/English Instagram caption for an educational post about: "${v['c1-topic']}"\nKey takeaway for reader: "${v['c1-takeaway']}"\n\nFormat:\n- Thai caption (150-200 words): storytelling opener → science explanation → practical takeaway → soft CTA\n- English caption (100-150 words): same structure, adapted naturally\n- 15 relevant hashtags (mix Thai + English)\n\nTone: warm, educational, never preachy.`,
-  c2: (v) => `${SYSTEM_PROMPT}\n\nWrite a bilingual Thai/English Instagram caption about: "${v['c2-tip']}"\n\nFormat:\n- Thai caption (150 words): relatable opening → the tip with WHY it works → encouragement → CTA to save\n- English caption (100 words)\n- 15 hashtags\n\nTone: practical, motivating, like a friend sharing what works.`,
-  c3: (v) => `${SYSTEM_PROMPT}\n\nWrite a bilingual first-person caption from Dr. Weeraporn about:\n"${v['c3-share']}"\n\nFormat:\n- Thai caption (150-200 words): personal, warm, honest. Use "ฉัน" naturally. End with a reflection or question.\n- English caption (100 words)\n- 12 hashtags\n\nThis is personal branding content — it should feel real, not corporate.`,
-  c4: (v) => `${SYSTEM_PROMPT}\n\nWrite a bilingual service/CTA caption for Avelyst.\nService: "${v['c4-service']}"\nDesired action: "${v['c4-action']}"\n\nFormat:\n- Thai caption (120-150 words): value-first approach → what the patient gets → warm CTA\n- English caption (80-100 words)\n- 12 hashtags\n\nNever use pressure tactics. Make it feel like an invitation, not a sale.`,
+const SECTIONS=[
+  {id:"hooks",icon:"🪝",label:"Hooks & Openers",group:"Content Creation",desc:"The first 1–2 lines that stop someone scrolling. Your hook = 80% of whether anyone watches the rest."},
+  {id:"scripts",icon:"🎬",label:"Video Scripts",group:"Content Creation",desc:"Full Reels/TikTok scripts with hook, body, CTA. Target: 30–90 seconds spoken."},
+  {id:"captions",icon:"✍️",label:"Captions",group:"Content Creation",desc:"Bilingual Thai+English captions with hashtags. Storytelling-first, science-backed."},
+  {id:"carousels",icon:"📱",label:"Carousel Slides",group:"Content Creation",desc:"Slide-by-slide copy for Instagram/Facebook carousels."},
+  {id:"ctas",icon:"📣",label:"CTAs",group:"Conversion",desc:"Calls-to-action for every funnel stage — soft to direct booking."},
+  {id:"stories",icon:"💬",label:"Patient Stories",group:"Conversion",desc:"Turn patient journeys into ethical, compelling content."},
+  {id:"repurpose",icon:"♻️",label:"Repurpose Content",group:"Research",desc:"One article → 5 posts. Max output, min effort."},
+  {id:"research",icon:"🔬",label:"Research → Post",group:"Research",desc:"Convert medical research into accessible, trustworthy content."},
+];
 
-  cr1: (v) => `${SYSTEM_PROMPT}\n\nCreate a ${v['cr1-slides']} Instagram carousel about: "${v['cr1-topic']}"\n\nFor each slide provide:\nSlide X — [HEADLINE] (max 8 words)\n[BODY] (2-3 sentences, educational but simple)\n\nSlide 1 must be a hook/cover. Last slide must have a CTA.\nAll in Thai with English translation for each slide.\nMake it educational and genuinely useful — something people save.`,
-  cr2: (v) => `${SYSTEM_PROMPT}\n\nCreate a checklist carousel: "${v['cr2-topic']}"\nFormat: ${v['cr2-format']}\n\nFor each slide:\nSlide X — [ITEM HEADLINE]\n[1-2 sentence explanation in Thai]\n[English translation]\n\nSlide 1 = attention-grabbing cover. Last slide = CTA + encouragement.\nMake each point feel insightful, not obvious.`,
-  cr3: (v) => `${SYSTEM_PROMPT}\n\nCreate a patient journey carousel based on this profile:\n"${v['cr3-profile']}"\n\nSlide structure:\n1. Hook (their struggle, make viewer feel seen)\n2. The background / what they tried before\n3. The turning point (discovering the real cause)\n4. Starting at Avelyst (the approach)\n5. Progress (what changed)\n6. The result (specific but realistic)\n7. Their words (a quote-style reflection)\n8. CTA slide\n\nAll in Thai + English. Warm, honest, never over-promise.`,
-
-  cta1: (v) => `${SYSTEM_PROMPT}\n\nWrite 5 soft CTAs for a post about: "${v['cta1-topic']}"\nThese CTAs should ask for low-commitment actions (save, comment, share, follow).\n\nFormat: numbered list, Thai + English. Make them feel natural, not forced. Vary the style.`,
-  cta2: (v) => `${SYSTEM_PROMPT}\n\nWrite 5 medium CTAs inviting people to DM or LINE about: "${v['cta2-about']}"\n\nFormat: numbered list, Thai + English. Warm and inviting — make it feel like a natural next step, not a sales push.`,
-  cta3: (v) => `${SYSTEM_PROMPT}\n\nWrite 5 direct booking CTAs for: "${v['cta3-service']}"\nUrgency note (if any): "${v['cta3-urgency']}"\n\nFormat: numbered list, Thai + English. Clear, specific, and still warm. No pressure tactics. Make booking feel like a self-care decision, not a purchase.`,
-  cta4: (v) => `${SYSTEM_PROMPT}\n\nWrite 5 loyalty/referral CTAs. Context: "${v['cta4-context']}"\n\nFormat: numbered list, Thai + English. Celebratory, grateful tone. Make sharing feel like spreading good news to people they care about.`,
-
-  ps1: (v) => `${SYSTEM_PROMPT}\n\nWrite a 150-200 word patient story caption (anonymised).\nBackground: "${v['ps1-bg']}"\nKey result: "${v['ps1-result']}"\n\nStructure: Relatable opening → Their struggle → The shift → The result → Takeaway message → Soft CTA\nBilingual: Thai first, English below.\nEthical note: Keep completely anonymised, no identifying details.`,
-  ps2: (v) => `${SYSTEM_PROMPT}\n\nWrite a 60-90 second doctor-narrated video script for this patient story:\n"${v['ps2-story']}"\n\nDr. Weeraporn tells the story in first person ("I had a patient..."). Warm, empathetic, ends with what this story means and a gentle CTA.\nIn Thai, spoken naturally. English at end.`,
-  ps3: (v) => `${SYSTEM_PROMPT}\n\nPolish this raw testimonial into publishable social media content:\n"${v['ps3-raw']}"\n\nCreate:\n1. A polished quote card text (1-2 sentences, most impactful part)\n2. A full caption using the testimonial (120 words, Thai + English)\n3. Suggested hashtags (10)\n\nKeep the patient's authentic voice while making it clearly structured.`,
-
-  rp1: (v) => `${SYSTEM_PROMPT}\n\nRepurpose this article/text into 5 different social media posts:\n"${v['rp1-article']}"\n\nCreate:\n1. Carousel cover hook (1 line, Thai)\n2. Educational caption (Thai + English)\n3. Myth-bust angle (Thai hook + short explanation)\n4. Tip list (3 practical tips from this content)\n5. Doctor's opinion take (Dr. Weeraporn's voice)\n\nLabel each clearly. All in Thai with English.`,
-  rp2: (v) => `${SYSTEM_PROMPT}\n\nTake this video transcript and repurpose it:\n"${v['rp2-transcript']}"\n\nCreate:\n1. Full Instagram caption (Thai + English, 150 words)\n2. 7-slide carousel copy (slide title + 2-sentence body each)\n3. 3 hook variations for a future video on this topic\n\nLabel each clearly.`,
-  rp3: (v) => `${SYSTEM_PROMPT}\n\nTranslate this medical research into patient-friendly content:\n"${v['rp3-research']}"\n\nCreate:\n1. Thai Instagram caption (150 words): start with a relatable hook, explain the research simply, end with a practical takeaway\n2. English caption (100 words)\n3. Key message in 1 line (for carousel cover or video hook)\n4. 3-slide carousel mini-version\n\nMaintain scientific accuracy while making it completely accessible.`,
-
-  re1: (v) => `${SYSTEM_PROMPT}\n\nConvert this medical guideline into patient-friendly content:\n"${v['re1-guideline']}"\nTarget format: ${v['re1-format']}\n\nAll in Thai + English. Make complex recommendations feel clear, actionable, and non-intimidating. Keep Dr. Weeraporn's warm voice throughout.`,
-  re2: (v) => `${SYSTEM_PROMPT}\n\nWrite a balanced medical opinion post on: "${v['re2-topic']}"\nDr. Weeraporn's stance: "${v['re2-stance']}"\n\nStructure: Hook (acknowledge the debate) → What the science says → Dr. Weeraporn's nuanced opinion → What this means for patients → CTA to consult\n\nBilingual Thai + English. Authoritative but accessible. Never preachy.`,
+const CARDS={
+  hooks:[
+    {id:"h1",e:"😤",n:"Pain Point Hook",s:"Calls out a specific frustration",tags:["Pillar 1&2","Awareness","High reach"],
+     fields:[{id:"pain",l:"The pain point",p:"e.g. ลดน้ำหนักไม่ได้ ทั้งที่กินน้อย ออกกำลังกายทุกวัน"}],
+     q:v=>`Write 5 scroll-stopping HOOKS (1-2 lines only) for a video about this pain point: "${v.pain||'[your pain point]'}"\n\nNumbered list. Each hook in Thai with English translation below. Emotionally resonant and specific.`},
+    {id:"h2",e:"🔬",n:"Myth-Bust Hook",s:"Challenges a belief with a surprising fact",tags:["Pillar 1","Authority","High shares"],
+     fields:[{id:"myth",l:"Common myth",p:"e.g. กินน้อย + ออกกำลังกายมาก = ผอม"},{id:"truth",l:"The truth",p:"e.g. cortisol และ muscle loss ทำให้ metabolism พัง"}],
+     q:v=>`Write 5 myth-busting HOOKS.\nMyth: "${v.myth||'[myth]'}"\nTruth: "${v.truth||'[truth]'}"\n\nNumbered list. Thai + English each. Mix styles: question, statement, "stop doing X".`},
+    {id:"h3",e:"👩‍⚕️",n:"Doctor's Personal Take Hook",s:'"As a doctor / As a mom of 3..."',tags:["Pillar 3","Trust"],
+     fields:[{id:"topic",l:"Topic / opinion",p:"e.g. ทำไมฉันถึงไม่แนะนำ intermittent fasting ให้กับคนไข้ทุกคน"}],
+     q:v=>`Write 5 personal-voice HOOKS for Dr. Weeraporn about: "${v.topic||'[topic]'}"\nStart some with "ในฐานะหมอ..." or "ในฐานะแม่ลูก 3..." or "หลังจากดูแลคนไข้มา 10 ปี..."\nNumbered list. Thai + English.`},
+    {id:"h4",e:"📊",n:"Statistic / Research Hook",s:"Lead with a surprising number",tags:["Pillar 1","High saves"],
+     fields:[{id:"stat",l:"Stat or research finding",p:"e.g. 95% ของคนที่ diet อย่างเดียว จะได้น้ำหนักกลับคืนภายใน 5 ปี"}],
+     q:v=>`Write 5 data-driven HOOKS based on: "${v.stat||'[stat]'}"\nMake the number feel surprising and relevant. Numbered list. Thai + English.`},
+    {id:"h5",e:"🎯",n:"Audience Identification Hook",s:'"If you\'ve ever..." format',tags:["All pillars","High engagement"],
+     fields:[{id:"situation",l:"Situation to identify with",p:"e.g. พยายามลดน้ำหนักมาหลายปีแต่ไม่สำเร็จ"}],
+     q:v=>`Write 5 identification HOOKS for: "${v.situation||'[situation]'}"\nStart with "ถ้าคุณเคย..." or "คุณเป็นคนที่..." Numbered list. Thai + English. Make viewers feel deeply understood.`},
+  ],
+  scripts:[
+    {id:"s1",e:"🎓",n:"Educational Explainer Script",s:"Explain a medical concept simply",tags:["Pillar 1","Authority"],
+     fields:[{id:"topic",l:"Topic",p:"e.g. Insulin resistance"},{id:"length",l:"Length",type:"select",opts:["30 seconds","60 seconds","90 seconds"],def:"60 seconds"},{id:"msg",l:"Key message",p:"e.g. อาหารที่คุณกินไม่ใช่ปัญหาเดียว — ฮอร์โมนต่างหากที่ต้องแก้"}],
+     q:v=>`Write a ${v.length||'60 seconds'} spoken video script explaining: "${v.topic||'[topic]'}"\nKey message: "${v.msg||'[message]'}"\nStructure: [HOOK] → problem setup → simple analogy → [TAKEAWAY] → [CTA]\nThai spoken language + English translation at end.`},
+    {id:"s2",e:"🔥",n:"Myth-Busting Script",s:"Debunk a health belief with evidence",tags:["Pillar 1","High shares"],
+     fields:[{id:"myth",l:"The myth",p:"e.g. ออกกำลังกาย cardio เยอะๆ คือวิธีลดน้ำหนักที่ดีที่สุด"},{id:"truth",l:"The truth",p:"e.g. Weight training เพิ่ม resting metabolism ได้ดีกว่า"}],
+     q:v=>`Write a 60-second myth-busting video script.\nMyth: "${v.myth||'[myth]'}"\nTruth: "${v.truth||'[truth]'}"\nStructure: Strong hook → State myth → "Here's what science says" → Explanation → Practical implication → CTA\nThai spoken + English at end.`},
+    {id:"s3",e:"💡",n:"Tip List Script",s:'"5 things..." — high save rate',tags:["Pillar 2","High saves"],
+     fields:[{id:"topic",l:"Topic",p:"e.g. นิสัยที่ทำให้ metabolism ดีขึ้น"},{id:"num",l:"Number of tips",type:"select",opts:["3","5","7"],def:"5"}],
+     q:v=>`Write a "${v.num||'5'} things about ${v.topic||'[topic]'}" video script, 45–60 seconds.\nStructure: Hook → Intro → Each point with 1-sentence explanation → Strong closing + CTA\nThai energetic and warm + English at end.`},
+    {id:"s4",e:"🩺",n:"Doctor's Story Script",s:"Personal perspective from Dr. Weeraporn",tags:["Pillar 3","Personal brand"],
+     fields:[{id:"topic",l:"Story or opinion topic",p:"e.g. ทำไมฉันถึงเปิดคลินิก weight management"},{id:"emo",l:"Key emotion to evoke",p:"e.g. ความหวัง, การได้รับ validation"}],
+     q:v=>`Write a personal video script from Dr. Weeraporn about: "${v.topic||'[topic]'}"\nEmotion: "${v.emo||'[emotion]'}"\nFirst person, honest, like talking to a friend.\nStructure: Personal hook → Story → Insight → Connection to Avelyst → Warm CTA\nThai conversational + English at end.`},
+  ],
+  captions:[
+    {id:"c1",e:"📖",n:"Educational Caption (Pillar 1)",s:"Science-backed post with a clear takeaway",tags:["Pillar 1","High saves"],
+     fields:[{id:"topic",l:"Topic",p:"e.g. GLP-1 medications และวิธีที่มันทำงาน"},{id:"tkwy",l:"Key takeaway",p:"e.g. ยาไม่ใช่ทางลัด — มันช่วยให้ body ทำงานได้ถูกต้อง"}],
+     q:v=>`Write a bilingual Instagram caption about: "${v.topic||'[topic]'}"\nKey takeaway: "${v.tkwy||'[takeaway]'}"\nThai (150-200 words): storytelling opener → science → practical takeaway → soft CTA\nEnglish (100-150 words): same\n15 hashtags (mix Thai + English)`},
+    {id:"c2",e:"💪",n:"Tip Caption (Pillar 2)",s:"Practical and inspiring with a real tip",tags:["Pillar 2","Inspiration"],
+     fields:[{id:"tip",l:"Tip or transformation theme",p:"e.g. การเพิ่ม protein ทุกมื้อเปลี่ยน body composition อย่างไร"}],
+     q:v=>`Bilingual Instagram caption about: "${v.tip||'[tip]'}"\nThai (150 words): relatable opening → tip with WHY → encouragement → CTA to save\nEnglish (100 words)\n15 hashtags`},
+    {id:"c3",e:"🧡",n:"Doctor's Personal Caption (Pillar 3)",s:"First-person post from Dr. Weeraporn",tags:["Pillar 3","Personal brand"],
+     fields:[{id:"share",l:"What do you want to share?",ta:true,p:"e.g. ฉันเป็นหมอที่ดูแลคนไข้ ICU มาหลายปี และสิ่งที่ทำให้ฉันเปิดคลินิกนี้คือ..."}],
+     q:v=>`Bilingual first-person caption from Dr. Weeraporn:\n"${v.share||'[your message]'}"\nThai (150-200 words): personal, warm, use "ฉัน", end with reflection\nEnglish (100 words)\n12 hashtags\nFeel real, not corporate.`},
+    {id:"c4",e:"🏥",n:"Service Caption (Pillar 4)",s:"Introduce a service — warm, not salesy",tags:["Pillar 4","Conversion"],
+     fields:[{id:"service",l:"Service to highlight",p:"e.g. Initial consultation + metabolic assessment"},{id:"action",l:"Desired action",p:"e.g. DM หรือ LINE เพื่อนัดพบ"}],
+     q:v=>`Bilingual service caption.\nService: "${v.service||'[service]'}"\nAction: "${v.action||'[action]'}"\nThai (120-150 words): value-first → what patient gets → warm CTA\nEnglish (80-100 words)\n12 hashtags\nFeel like an invitation, not a sale.`},
+  ],
+  carousels:[
+    {id:"cr1",e:"🧠",n:"Educational Carousel",s:"Teach something valuable, slide by slide",tags:["Pillar 1&2","High saves"],
+     fields:[{id:"topic",l:"Topic",p:"e.g. ทำไม metabolism ถึงช้าลงเมื่ออายุมากขึ้น"},{id:"slides",l:"Slides",type:"select",opts:["5 slides","7 slides","9 slides"],def:"7 slides"}],
+     q:v=>`Create a ${v.slides||'7 slides'} Instagram carousel about: "${v.topic||'[topic]'}"\nEach slide:\nSLIDE X — [HEADLINE max 8 words]\n[BODY 2-3 sentences]\nSlide 1 = hook/cover. Last slide = CTA.\nThai + English per slide.`},
+    {id:"cr2",e:"✅",n:"Checklist Carousel",s:'"X warning signs / tips" — highest save rate',tags:["Pillar 2","Viral potential"],
+     fields:[{id:"topic",l:"Topic",p:"e.g. 7 สัญญาณที่บอกว่า metabolism ของคุณมีปัญหา"},{id:"fmt",l:"Format",type:"select",opts:["Things to DO","Things to AVOID","Warning signs","Questions to ask"],def:"Warning signs"}],
+     q:v=>`Create a checklist carousel: "${v.topic||'[topic]'}" (Format: ${v.fmt||'Warning signs'})\nEach slide:\nSLIDE X — [ITEM]\n[1-2 sentence explanation]\n[English translation]\nSlide 1 = cover. Last = CTA.`},
+    {id:"cr3",e:"🌟",n:"Patient Journey Carousel",s:"Struggle → discovery → transformation",tags:["Pillar 2&4","Conversion"],
+     fields:[{id:"profile",l:"Patient profile (anonymised)",ta:true,p:"e.g. ผู้หญิงอายุ 45 ปี ลูก 2 คน พยายามลดน้ำหนักมา 5 ปี เพราะ insulin resistance"}],
+     q:v=>`Patient journey carousel:\n"${v.profile||'[patient profile]'}"\nSlides: 1.Hook 2.Background 3.Turning point 4.Starting Avelyst 5.Progress 6.Result 7.Their words 8.CTA\nThai + English each. Warm, honest, never over-promise.`},
+  ],
+  ctas:[
+    {id:"cta1",e:"💬",n:"Soft CTA (Save / Comment)",s:"Awareness stage — low commitment",tags:["Awareness","Engagement"],
+     fields:[{id:"topic",l:"Post topic",p:"e.g. โพสต์เกี่ยวกับทำไม diet อย่างเดียวถึงไม่ work"}],
+     q:v=>`Write 5 soft CTAs for a post about: "${v.topic||'[topic]'}"\nAsk for low-commitment actions (save, comment, share, follow).\nNumbered list. Thai + English. Natural, varied styles.`},
+    {id:"cta2",e:"📩",n:"Medium CTA (DM / LINE)",s:"Invite a conversation",tags:["Interest","Lead gen"],
+     fields:[{id:"about",l:"What should they message about?",p:"e.g. ถามเกี่ยวกับ initial consultation"}],
+     q:v=>`Write 5 medium CTAs inviting DM or LINE about: "${v.about||'[topic]'}"\nNumbered list. Thai + English. Warm — feel like a natural next step.`},
+    {id:"cta3",e:"📅",n:"Direct Booking CTA",s:"Clear, warm, specific",tags:["Conversion","Booking"],
+     fields:[{id:"service",l:"Service",p:"e.g. Initial consultation + metabolic assessment"},{id:"urgency",l:"Urgency (optional)",p:"e.g. รับจำนวนจำกัด"}],
+     q:v=>`Write 5 direct booking CTAs.\nService: "${v.service||'[service]'}"\nUrgency: "${v.urgency||'none'}"\nNumbered list. Thai + English. Make booking feel like a self-care decision.`},
+    {id:"cta4",e:"🔁",n:"Loyalty / Referral CTA",s:"Encourage sharing",tags:["Loyalty","Word of mouth"],
+     fields:[{id:"ctx",l:"Context / milestone",p:"e.g. คนไข้ที่ลดน้ำหนักได้ตามเป้า"}],
+     q:v=>`Write 5 loyalty/referral CTAs. Context: "${v.ctx||'[context]'}"\nNumbered list. Thai + English. Celebratory and grateful.`},
+  ],
+  stories:[
+    {id:"ps1",e:"📝",n:"Patient Story — Caption",s:"150–200 word story for feed post",tags:["Pillar 2","Social proof"],
+     fields:[{id:"bg",l:"Patient background (anonymised)",ta:true,p:"e.g. หญิง 48 ปี บริหาร มีเบาหวาน ลองลดน้ำหนักมาหลายปี..."},{id:"result",l:"Key result",p:"e.g. หลัง 3 เดือน น้ำหนักลด 8 กก."}],
+     q:v=>`Write a 150-200 word patient story caption.\nBackground: "${v.bg||'[background]'}"\nResult: "${v.result||'[result]'}"\nStructure: Relatable opening → Struggle → Shift → Result → Takeaway → Soft CTA\nThai first, English below. Completely anonymised.`},
+    {id:"ps2",e:"🎥",n:"Patient Story — Video Script",s:"Script for doctor to narrate",tags:["Pillar 2&3","High conversion"],
+     fields:[{id:"story",l:"Patient story details",ta:true,p:"e.g. ชาย 52 ปี น้ำหนัก 110 กก. มีความดันและไขมันสูง..."}],
+     q:v=>`Write a 60-90 second doctor-narrated video script.\nStory: "${v.story||'[story]'}"\nDr. Weeraporn tells in first person. Warm, empathetic, ends with gentle CTA.\nThai spoken + English at end.`},
+    {id:"ps3",e:"💌",n:"Testimonial Polish",s:"Raw review → publishable content",tags:["Pillar 4","Trust"],
+     fields:[{id:"raw",l:"Raw review text",ta:true,p:"วางรีวิวดิบๆ ที่นี่..."}],
+     q:v=>`Polish this raw testimonial: "${v.raw||'[testimonial]'}"\n1. Quote card text (1-2 sentences, most impactful)\n2. Full caption (120 words, Thai + English)\n3. 10 suggested hashtags`},
+  ],
+  repurpose:[
+    {id:"rp1",e:"📄",n:"Article → 5 Social Posts",s:"One article, five formats",tags:["All pillars","High efficiency"],
+     fields:[{id:"article",l:"Paste article / blog text",ta:true,p:"วาง article หรือสรุปงานวิจัยที่นี่..."}],
+     q:v=>`Repurpose this into 5 social media posts:\n"${v.article||'[article]'}"\n1. Carousel cover hook (1 line, Thai)\n2. Educational caption (Thai + English)\n3. Myth-bust angle\n4. Tip list (3 tips)\n5. Doctor's opinion take\nLabel each clearly.`},
+    {id:"rp2",e:"🎙️",n:"Video Transcript → Caption + Carousel",s:"Reel transcript → written content",tags:["All pillars"],
+     fields:[{id:"trans",l:"Paste video transcript",ta:true,p:"วาง transcript ของ video ที่นี่..."}],
+     q:v=>`Repurpose this transcript:\n"${v.trans||'[transcript]'}"\n1. Instagram caption (Thai + English, 150 words)\n2. 7-slide carousel (title + 2-sentence body each)\n3. 3 hook variations\nLabel each clearly.`},
+    {id:"rp3",e:"🔬",n:"Research Paper → Patient Post",s:"Complex studies → shareable content",tags:["Pillar 1","Authority"],
+     fields:[{id:"res",l:"Research findings (abstract)",ta:true,p:"e.g. Study: Semaglutide reduced body weight by 15%..."}],
+     q:v=>`Translate this research into patient-friendly content:\n"${v.res||'[research]'}"\n1. Thai caption (150 words): hook → explain simply → takeaway\n2. English caption (100 words)\n3. Key message in 1 line\n4. 3-slide carousel mini-version`},
+  ],
+  research:[
+    {id:"re1",e:"📚",n:"Guideline Summary Post",s:"Clinical guidelines → patient post",tags:["Pillar 1","Authority"],
+     fields:[{id:"gl",l:"Guideline / recommendation",ta:true,p:"e.g. AHA 2023: 150 min moderate activity/week..."},{id:"fmt",l:"Format",type:"select",opts:["Instagram caption","Carousel (5 slides)","Both caption + carousel","Short video script"],def:"Both caption + carousel"}],
+     q:v=>`Convert this guideline into patient-friendly content:\n"${v.gl||'[guideline]'}"\nFormat: ${v.fmt||'Both caption + carousel'}\nThai + English. Clear, actionable, non-intimidating.`},
+    {id:"re2",e:"⚖️",n:"Balanced Medical Opinion Post",s:"Trending topic with nuance",tags:["Pillar 1&3","High engagement"],
+     fields:[{id:"topic",l:"Trending topic / controversy",p:"e.g. Ozempic สำหรับคนที่ไม่ได้เป็นเบาหวาน"},{id:"stance",l:"Dr. Weeraporn's stance",ta:true,p:"e.g. มีประโยชน์ในผู้ที่มีข้อบ่งชี้ที่เหมาะสม แต่ต้องอยู่ภายใต้การดูแลของแพทย์"}],
+     q:v=>`Write a balanced medical opinion post on: "${v.topic||'[topic]'}"\nStance: "${v.stance||'[stance]'}"\nStructure: Hook → What science says → Her nuanced opinion → What this means for patients → Gentle CTA\nBilingual Thai + English.`},
+  ],
 };
 
-function showPage(id) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('page-' + id).classList.add('active');
-  event.currentTarget && event.currentTarget.classList.add('active');
-  // Find and activate the right button
-  document.querySelectorAll('.sidebar-btn').forEach(b => {
-    if (b.getAttribute('onclick') && b.getAttribute('onclick').includes("'" + id + "'")) {
-      b.classList.add('active');
-    }
+let active='hooks';
+
+function render(){
+  const groups=[...new Set(SECTIONS.map(s=>s.group))];
+  document.getElementById('sidebar').innerHTML=groups.map(g=>`
+    <div class="sg">${g}</div>
+    ${SECTIONS.filter(s=>s.group===g).map(s=>`
+      <button class="sb ${s.id===active?'active':''}" onclick="switchSection('${s.id}')">${s.icon} ${s.label}</button>
+    `).join('')}
+  `).join('');
+  const sec=SECTIONS.find(s=>s.id===active);
+  const cards=CARDS[active]||[];
+  document.getElementById('main').innerHTML=`
+    <div class="ptitle">${sec.label}</div>
+    <div class="pdesc">${sec.desc}</div>
+    <div class="notice">
+      <strong>How to use:</strong> Fill in the fields → click <strong>Build Prompt</strong> → the full prompt appears below → click <strong>Copy</strong> → paste into <a href="https://claude.ai" target="_blank" style="color:var(--green);font-weight:500">claude.ai</a> → get your content instantly.
+    </div>
+    ${cards.map(c=>cardHTML(c)).join('')}
+  `;
+}
+
+function cardHTML(c){
+  return `<div class="card" id="card-${c.id}">
+    <div class="ch" onclick="toggleCard('${c.id}')">
+      <span style="font-size:18px">${c.e}</span>
+      <div style="flex:1">
+        <div class="cn">${c.n}</div>
+        <div class="cs">${c.s}</div>
+        <div class="tags">${c.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+      </div>
+      <span class="arr" id="arr-${c.id}">▾</span>
+    </div>
+    <div class="cb" id="cb-${c.id}">
+      ${c.fields.map(f=>`
+        <label class="fl">${f.l}</label>
+        ${f.ta?`<textarea id="f-${c.id}-${f.id}" placeholder="${f.p}"></textarea>`
+          :f.type==='select'?`<select id="f-${c.id}-${f.id}">${(f.opts||[]).map(o=>`<option ${o===f.def?'selected':''}>${o}</option>`).join('')}</select>`
+          :`<input type="text" id="f-${c.id}-${f.id}" placeholder="${f.p}">`}
+      `).join('')}
+      <div class="br">
+        <button class="bgen" onclick="buildPrompt('${c.id}')">✦ Build Prompt</button>
+        <button class="bcopy" id="copy-${c.id}" onclick="copyOut('${c.id}')">Copy Prompt</button>
+        <a class="bopen" id="open-${c.id}" href="https://claude.ai/new" target="_blank">Open Claude.ai →</a>
+      </div>
+      <div class="out" id="out-${c.id}">
+        <div class="ol">Your Ready-to-Use Prompt</div>
+        <div class="ot" id="ot-${c.id}"></div>
+        <div class="step">
+          <strong>Next step:</strong> Click <strong>Copy Prompt</strong> above → go to <a href="https://claude.ai/new" target="_blank" style="color:var(--acc2)">claude.ai</a> → paste → send. Done! ✓
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function switchSection(id){active=id;render();}
+
+function toggleCard(id){
+  const cb=document.getElementById('cb-'+id);
+  const arr=document.getElementById('arr-'+id);
+  const open=cb.classList.toggle('open');
+  arr.style.transform=open?'rotate(180deg)':'none';
+}
+
+function buildPrompt(id){
+  const card=Object.values(CARDS).flat().find(c=>c.id===id);
+  if(!card)return;
+  const vals={};
+  card.fields.forEach(f=>{
+    const el=document.getElementById(`f-${id}-${f.id}`);
+    if(el)vals[f.id]=el.value;
+  });
+  const fullPrompt=SP+card.q(vals);
+  document.getElementById('ot-'+id).textContent=fullPrompt;
+  document.getElementById('out-'+id).style.display='block';
+  document.getElementById('copy-'+id).style.display='inline-block';
+  document.getElementById('open-'+id).style.display='inline-block';
+}
+
+function copyOut(id){
+  const txt=document.getElementById('ot-'+id).textContent;
+  navigator.clipboard.writeText(txt).then(()=>{
+    const btn=document.getElementById('copy-'+id);
+    btn.textContent='Copied!';
+    setTimeout(()=>btn.textContent='Copy Prompt',1500);
   });
 }
 
-function toggleCard(id) {
-  const card = document.getElementById('card-' + id);
-  card.classList.toggle('open');
-}
-
-function getValues(id) {
-  const body = document.getElementById('card-' + id).querySelector('.prompt-body');
-  const inputs = body.querySelectorAll('input, textarea, select');
-  const vals = {};
-  inputs.forEach(inp => { vals[inp.id] = inp.value; });
-  return vals;
-}
-
-async function generate(id) {
-  const vals = getValues(id);
-  const promptFn = PROMPTS[id];
-  if (!promptFn) return;
-  const prompt = promptFn(vals);
-
-  const loadEl = document.getElementById('loading-' + id);
-  const outEl = document.getElementById('output-' + id);
-  const textEl = document.getElementById('text-' + id);
-  const copyBtn = document.getElementById('copy-' + id);
-  const genBtn = document.querySelector(`#card-${id} .btn-gen`);
-
-  genBtn.disabled = true;
-  loadEl.classList.add('visible');
-  outEl.classList.remove('visible');
-  if (copyBtn) copyBtn.style.display = 'none';
-
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-    const data = await res.json();
-    const text = data.content?.map(b => b.text || '').join('') || 'Error — please try again.';
-    textEl.textContent = text;
-    outEl.classList.add('visible');
-    if (copyBtn) copyBtn.style.display = 'inline-block';
-    outEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  } catch(e) {
-    textEl.textContent = 'Connection error. Please try again.';
-    outEl.classList.add('visible');
-  }
-
-  genBtn.disabled = false;
-  loadEl.classList.remove('visible');
-}
-
-function copyOutput(id) {
-  const text = document.getElementById('text-' + id).textContent;
-  navigator.clipboard.writeText(text).then(() => {
-    const btn = document.getElementById('copy-' + id);
-    const orig = btn.textContent;
-    btn.textContent = 'Copied!';
-    setTimeout(() => btn.textContent = orig, 1500);
-  });
-}
-
-function copySystemPrompt() {
-  const text = document.getElementById('masterSystemPrompt').textContent;
-  navigator.clipboard.writeText(text).then(() => {
-    const btn = event.currentTarget;
-    btn.textContent = 'Copied!';
-    setTimeout(() => btn.textContent = 'Copy System Prompt', 1500);
-  });
-}
+render();
 </script>
 </body>
 </html>
