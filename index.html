@@ -329,13 +329,39 @@ function saveApiKey() {
 }
 
 // ─── GOOGLE SHEETS VIA API ───────────────────────────────────
-// Uses Google Sheets public CSV export — works without OAuth for reading
-// Writing requires Google Apps Script web app (instructions below)
-
 async function loadFromSheet() {
   setSyncStatus('Syncing with Google Sheets…', '');
+
+  // FIRST: try to load from calendar's localStorage (same device)
+  const calSaved = localStorage.getItem('avelyst_calendar');
+  if (calSaved) {
+    try {
+      const {calendarData: cd} = JSON.parse(calSaved);
+      if (cd && cd.length) {
+        // Convert calendar data to schedule keyed by ISO date
+        schedule = {};
+        cd.forEach(p => {
+          const dateObj = new Date(p.year, p.month, p.date);
+          const iso = dateObj.toISOString().split('T')[0];
+          schedule[iso] = {
+            date: iso,
+            pillar: p.pillar,
+            format: p.format,
+            topic: p.topic,
+            hook: p.hook || '',
+            notes: p.notes || '',
+            status: p.status || 'To Do',
+          };
+        });
+        setSyncStatus('✓ Loaded from Content Calendar', 'ok');
+        renderWeek();
+        return;
+      }
+    } catch(e) {}
+  }
+
+  // SECOND: try Google Sheet (shared access)
   try {
-    // Read sheet as CSV (public access)
     const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_NAME)}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error('Failed to fetch');
@@ -343,8 +369,7 @@ async function loadFromSheet() {
     parseCSV(csv);
     setSyncStatus('✓ Synced with Google Sheets', 'ok');
   } catch(e) {
-    // Fall back to local schedule
-    setSyncStatus('⚠ Could not reach Google Sheets — showing local data', 'err');
+    setSyncStatus('No calendar generated yet — open Content Calendar and click Generate first', 'err');
   }
   renderWeek();
 }
@@ -452,7 +477,7 @@ function generateWeek() {
     // Pick unused topic for this pillar
     const bank = BANK[pillar];
     const available = bank.filter(t => !retiredTopics.has(t.t) && !scheduledTopics.has(t.t));
-    const pick = available.length > 0 ? available[0] : bank[i % bank.length]; // fallback if bank exhausted
+    const pick = available.length > 0 ? available[0] : bank[i % bank.length];
 
     schedule[iso] = {
       date: iso,
@@ -466,14 +491,56 @@ function generateWeek() {
     scheduledTopics.add(pick.t);
   });
 
+  // Sync back to calendar localStorage so both tools stay consistent
+  syncToCalendarStorage();
   renderWeek();
-  setSyncStatus('⚠ Generated locally — open Google Sheet to save changes', 'err');
-  showSheetInstructions();
+  setSyncStatus('✓ Week generated and saved', 'ok');
 }
 
-function showSheetInstructions() {
-  alert('✓ Week generated!\n\nTo save to Google Sheets (so your assistant sees it):\n1. Open the Sheet (📊 Sheet button in header)\n2. Paste the new topics manually\n\nPhase 3 will automate this sync completely.');
+function syncToCalendarStorage() {
+  // Read existing calendar data
+  let existingCal = [];
+  const saved = localStorage.getItem('avelyst_calendar');
+  if (saved) {
+    try { existingCal = JSON.parse(saved).calendarData || []; } catch(e) {}
+  }
+
+  // Convert schedule back to calendar format and merge
+  const newEntries = Object.values(schedule).map(p => {
+    const d = new Date(p.date + 'T00:00:00');
+    const dayOfWeek = (d.getDay() + 6) % 7;
+    const DAYS_CAL = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    return {
+      date: d.getDate(),
+      dayName: DAYS_CAL[dayOfWeek],
+      month: d.getMonth(),
+      year: d.getFullYear(),
+      pillar: p.pillar,
+      pillarLabel: ['Science','Tips & Transform',"Doctor's View",'Services'][p.pillar-1],
+      topic: p.topic,
+      format: p.format,
+      hook: p.hook || '',
+      funnel: ['Awareness','Interest','Trust','Conversion'][p.pillar-1],
+      status: p.status,
+      week: Math.ceil(d.getDate() / 7),
+    };
+  });
+
+  // Merge: dashboard entries override calendar entries for same dates
+  const existingMap = {};
+  existingCal.forEach(e => { existingMap[`${e.year}-${e.month}-${e.date}`] = e; });
+  newEntries.forEach(e => { existingMap[`${e.year}-${e.month}-${e.date}`] = e; });
+  const merged = Object.values(existingMap);
+
+  localStorage.setItem('avelyst_calendar', JSON.stringify({
+    calendarData: merged,
+    month: merged[0]?.month ?? new Date().getMonth(),
+    year: merged[0]?.year ?? new Date().getFullYear(),
+    pillarLabels: ['Science','Tips & Transform',"Doctor's View",'Services'],
+  }));
 }
+
+
 
 // ─── RENDER ───────────────────────────────────────────────────
 function renderWeek() {
@@ -617,8 +684,9 @@ function updateStatus(i, val) {
   const sb = document.getElementById('sb-'+i);
   const cls = {'To Do':'s-todo','In Progress':'s-progress','Done':'s-done','Posted':'s-posted'}[val]||'s-todo';
   if (sb) { sb.className='status-badge '+cls; sb.textContent=val; }
-  // Remind to update sheet
-  setSyncStatus('⚠ Changes not saved to Sheet yet — update manually or Phase 3 will automate this', 'err');
+  // Sync back to shared localStorage
+  syncToCalendarStorage();
+  setSyncStatus('✓ Status saved', 'ok');
 }
 
 function openTool(i) {
