@@ -136,7 +136,7 @@ input[type=week]:focus{border-color:var(--green)}
       <a class="nav-link" href="avelyst-carousel-generator.html" target="_blank">📱 Carousels</a>
       <a class="nav-link" href="avelyst-viral-research.html" target="_blank">🔬 Research</a>
       <a class="nav-link" href="avelyst-calendar.html" target="_blank">🗓 Calendar</a>
-      <a class="nav-link" id="sheetNavLink" href="https://docs.google.com/spreadsheets/d/1nTxQs1mzLK3riQ6p21rJQt0Cai0Nw0T10rvdY78sDGc" target="_blank">📊 Sheet</a>
+      <a class="nav-link" id="sheetNavLink" href="https://docs.google.com/spreadsheets/d/1mA9LLx47un4ETaPijNEC_kCAVKyhrttf9xPyeKxCHXY" target="_blank">📊 Sheet</a>
     </div>
   </div>
 </header>
@@ -199,7 +199,7 @@ input[type=week]:focus{border-color:var(--green)}
       <div class="tool-desc">Full Reel & TikTok scripts — 6 types, bilingual Thai+English</div>
       <span class="tool-tag">Live</span>
     </a>
-    <a class="tool-card" href="https://docs.google.com/spreadsheets/d/1nTxQs1mzLK3riQ6p21rJQt0Cai0Nw0T10rvdY78sDGc" target="_blank">
+    <a class="tool-card" href="https://docs.google.com/spreadsheets/d/1mA9LLx47un4ETaPijNEC_kCAVKyhrttf9xPyeKxCHXY" target="_blank">
       <div class="tool-icon">📊</div>
       <div class="tool-name">Content Schedule</div>
       <div class="tool-desc">The shared Google Sheet — edit directly, visible to your whole team</div>
@@ -241,8 +241,7 @@ input[type=week]:focus{border-color:var(--green)}
 
 <script>
 // ─── CONSTANTS ───────────────────────────────────────────────
-const SHEET_ID = '1nTxQs1mzLK3riQ6p21rJQt0Cai0Nw0T10rvdY78sDGc';
-const SHEET_NAME = 'Sheet1';
+const SHEET_ID = '1mA9LLx47un4ETaPijNEC_kCAVKyhrttf9xPyeKxCHXY';
 const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const PCOLS = ['#2C4A3E','#6B4C3B','#4A6741','#7A5C47'];
@@ -330,73 +329,92 @@ function saveApiKey() {
   document.getElementById('setupBanner').style.borderColor = 'var(--beige)';
 }
 
-// ─── GOOGLE SHEETS VIA API ───────────────────────────────────
+// ─── GOOGLE SHEETS ────────────────────────────────────────────
 async function loadFromSheet() {
-  setSyncStatus('Syncing with Google Sheets…', '');
-
-  // FIRST: try to load from calendar's localStorage (same device)
-  const calSaved = localStorage.getItem('avelyst_calendar');
-  if (calSaved) {
-    try {
-      const {calendarData: cd} = JSON.parse(calSaved);
-      if (cd && cd.length) {
-        // Convert calendar data to schedule keyed by ISO date
-        // Use local date math (not toISOString which shifts to UTC)
-        schedule = {};
-        cd.forEach(p => {
-          const y = p.year;
-          const m = String(p.month + 1).padStart(2, '0');
-          const d = String(p.date).padStart(2, '0');
-          const iso = `${y}-${m}-${d}`;
-          schedule[iso] = {
-            date: iso,
-            pillar: p.pillar,
-            format: p.format,
-            topic: p.topic,
-            hook: p.hook || '',
-            notes: p.notes || '',
-            status: p.status || 'To Do',
-          };
-        });
-        setSyncStatus('✓ Loaded from Content Calendar', 'ok');
-        renderWeek();
-        return;
-      }
-    } catch(e) {}
-  }
-
-  // SECOND: try Google Sheet (shared access)
+  setSyncStatus('Loading from Google Sheets…', '');
   try {
-    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_NAME)}`;
+    // Use gviz CSV export — works publicly if sheet is shared
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Avelyst`;
     const res = await fetch(url);
-    if (!res.ok) throw new Error('Failed to fetch');
+    if (!res.ok) throw new Error('Sheet not accessible');
     const csv = await res.text();
-    parseCSV(csv);
-    setSyncStatus('✓ Synced with Google Sheets', 'ok');
+    parseAvelystSheet(csv);
+    setSyncStatus(`✓ Loaded from Google Sheets — ${Object.keys(schedule).length} posts`, 'ok');
   } catch(e) {
-    setSyncStatus('No calendar generated yet — open Content Calendar and click Generate first', 'err');
+    setSyncStatus('⚠ Could not load Sheet — make sure it is shared publicly (View access)', 'err');
   }
   renderWeek();
 }
 
-function parseCSV(csv) {
-  const lines = csv.trim().split('\n').slice(1); // skip header
+function parseAvelystSheet(csv) {
+  const lines = csv.trim().split('\n');
+  // Find header row
+  const headerIdx = lines.findIndex(l => l.includes('Topic') || l.includes('Status'));
+  const dataLines = lines.slice(headerIdx + 1);
   schedule = {};
-  lines.forEach(line => {
+
+  dataLines.forEach(line => {
     const cols = parseCSVLine(line);
-    if (cols.length < 10) return;
-    const [date,,, pillar, pillarName, format, topic, hook, notes, status] = cols;
-    if (!date || date.length < 8) return;
-    const cleanDate = date.replace(/"/g,'').trim();
-    schedule[cleanDate] = {
-      date: cleanDate,
-      pillar: parseInt(pillar) || 1,
-      format: format.replace(/"/g,'').trim(),
-      topic: topic.replace(/"/g,'').trim(),
-      hook: hook.replace(/"/g,'').trim(),
-      notes: notes.replace(/"/g,'').trim(),
-      status: status.replace(/"/g,'').trim() || 'To Do',
+    if (cols.length < 8) return;
+    // Columns: Day, Topic/Post Title, Content Brief, Format, Phase, Caption, Hashtags, Status, Date Posted, Content Link
+    const clean = cols.map(c => c.replace(/^"|"$/g, '').trim());
+    const [day, topic, brief, format, phase, caption, hashtags, status, datePosted, contentLink] = clean;
+    if (!topic || !topic.trim()) return;
+
+    // Parse date — format is D/M/YY e.g. "12/3/26"
+    let iso = '';
+    if (datePosted && datePosted.match(/\d+\/\d+\/\d+/)) {
+      const parts = datePosted.split('/');
+      if (parts.length === 3) {
+        const d = parts[0].padStart(2,'0');
+        const m = parts[1].padStart(2,'0');
+        const y = parts[2].length === 2 ? '20' + parts[2] : parts[2];
+        iso = `${y}-${m}-${d}`;
+      }
+    }
+
+    // Map format to our format names
+    const fmt = format.includes('Carousel') || format.includes('🎠') ? 'Carousel'
+      : format.includes('Clip') || format.includes('🎬') ? 'Reel / TikTok'
+      : 'Single Post';
+
+    // Map status
+    const st = status === 'Posted' ? 'Posted'
+      : status === 'Scheduled' ? 'In Progress'
+      : status === 'Approved' ? 'In Progress'
+      : status === 'Draft' ? 'To Do'
+      : status === 'Needs Review' ? 'In Progress'
+      : status || 'To Do';
+
+    // Map phase to pillar
+    const pillar = phase.includes('Awareness') ? 1
+      : phase.includes('Education') ? 1
+      : phase.includes('Trust') ? 3
+      : phase.includes('Convert') || phase.includes('Sell') ? 4
+      : 2;
+
+    const entry = {
+      date: iso,
+      day: parseInt(day) || 0,
+      topic: topic.trim(),
+      brief: brief.trim(),
+      format: fmt,
+      phase: phase.trim(),
+      caption: caption.trim(),
+      hashtags: hashtags.trim(),
+      status: st,
+      datePosted,
+      contentLink: contentLink?.trim() || '',
+      pillar,
+      notes: brief.trim(),
     };
+
+    if (iso) {
+      schedule[iso] = entry;
+    } else {
+      // No date yet — store by day number for unscheduled posts
+      schedule[`unscheduled-${day}`] = entry;
+    }
   });
 }
 
@@ -664,6 +682,7 @@ function cardHTML(p, i) {
     </div>
     <div class="card-footer">
       <button class="btn-action ${cls}" id="btn-${i}" onclick="openTool(${i})">${label}</button>
+      ${p.contentLink ? `<a href="${p.contentLink}" target="_blank" style="display:block;text-align:center;font-size:11px;color:var(--acc2);margin-top:4px;text-decoration:none">🎨 Open in Canva →</a>` : ''}
       <select class="status-select" id="st-${i}" onchange="updateStatus(${i},this.value)">${stOpts}</select>
     </div>
   </div>`;
