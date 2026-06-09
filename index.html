@@ -209,12 +209,12 @@ input[type=week]:focus{border-color:var(--green)}
       <div class="tool-desc">Generate & plan your 30-day content schedule by pillar and format</div>
       <span class="tool-tag">Live</span>
     </a>
-    <div class="tool-card dim">
+    <a class="tool-card" href="avelyst-carousel-generator.html" target="_blank">
       <div class="tool-icon">📱</div>
       <div class="tool-name">Carousel Generator</div>
-      <div class="tool-desc">Slide-by-slide copy → auto-push to Canva artwork</div>
-      <span class="tool-tag">Phase 2B</span>
-    </div>
+      <div class="tool-desc">Slide-by-slide copy → push directly to Canva artwork</div>
+      <span class="tool-tag">Live</span>
+    </a>
     <div class="tool-card dim">
       <div class="tool-icon">✍️</div>
       <div class="tool-name">Caption Generator</div>
@@ -613,10 +613,10 @@ function getBtn(format) {
   if (format.includes('Reel') || format.includes('TikTok'))
     return {cls:'btn-reel', label:'🎬 Write Script'};
   if (format === 'Carousel')
-    return {cls:'btn-carousel btn-coming', label:'📱 Carousel — Phase 2B'};
+    return {cls:'btn-carousel', label:'📱 Create Carousel'};
   if (format === 'Story')
-    return {cls:'btn-caption btn-coming', label:'📖 Caption — Phase 2C'};
-  return {cls:'btn-caption btn-coming', label:'✍️ Caption — Phase 2C'};
+    return {cls:'btn-caption', label:'✍️ Write Caption'};
+  return {cls:'btn-caption', label:'✍️ Write Caption'};
 }
 
 function cardHTML(p, i) {
@@ -697,14 +697,19 @@ function updateStatus(i, val) {
 
 function openTool(i) {
   const p = weekData[i];
+  let url = '';
   if (p.format.includes('Reel') || p.format.includes('TikTok')) {
-    const url = `avelyst-script-generator.html?topic=${encodeURIComponent(p.topic)}&pillar=${p.pillar}&notes=${encodeURIComponent(p.notes||'')}`;
-    window.open(url, '_blank');
-    updateStatus(i, 'In Progress');
-    const sel = document.getElementById('st-'+i);
-    if (sel) sel.value = 'In Progress';
+    url = `avelyst-script-generator.html?topic=${encodeURIComponent(p.topic)}&pillar=${p.pillar}&notes=${encodeURIComponent(p.notes||'')}`;
+  } else if (p.format === 'Carousel') {
+    url = `avelyst-carousel-generator.html?topic=${encodeURIComponent(p.topic)}&pillar=${p.pillar}&notes=${encodeURIComponent(p.notes||'')}`;
+  } else {
+    // Single Post / Story → script generator (caption at bottom)
+    url = `avelyst-script-generator.html?topic=${encodeURIComponent(p.topic)}&pillar=${p.pillar}&notes=${encodeURIComponent(p.notes||'')}`;
   }
-  // Carousel/Caption — coming soon, button is disabled via btn-coming class
+  window.open(url, '_blank');
+  updateStatus(i, 'In Progress');
+  const sel = document.getElementById('st-'+i);
+  if (sel) sel.value = 'In Progress';
 }
 </script>
 </body>

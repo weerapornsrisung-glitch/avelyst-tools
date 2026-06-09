@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Avelyst — Carousel Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--cream:#FAF7F2;--beige:#EDE8DF;--sand:#D6CEBC;--green:#2C4A3E;--green2:#3D6357;--brown:#4A3728;--acc:#8B6F4E;--acc2:#C4956A;--txt:#1A1A1A;--mut:#6B6560}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--txt);min-height:100vh;padding:32px 20px 60px}
+.wrap{max-width:720px;margin:0 auto}
+header{margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid var(--beige);display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.logo{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:300;color:var(--green)}
+.logo em{font-style:italic;color:var(--acc2)}
+.sub{font-size:10px;color:var(--mut);letter-spacing:.12em;text-transform:uppercase;margin-top:3px}
+
+/* API BANNER */
+.api-banner{background:white;border:1px solid var(--beige);border-radius:12px;padding:14px 18px;margin-bottom:24px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.api-banner.saved{border-color:#b2d0c8;background:#E8F0EE}
+.api-label{font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--acc);flex-shrink:0}
+.api-input{flex:1;min-width:200px;background:var(--cream);border:1px solid var(--sand);border-radius:7px;padding:8px 12px;font-family:'DM Sans',monospace;font-size:12px;color:var(--txt);outline:none}
+.api-save{background:var(--green);color:var(--cream);border:none;border-radius:7px;padding:8px 16px;font-family:inherit;font-size:12px;font-weight:500;cursor:pointer;flex-shrink:0}
+.api-save:hover{background:var(--green2)}
+.api-status{font-size:12px;color:var(--green2);font-weight:500;flex-shrink:0;display:none}
+.api-note{font-size:11px;color:var(--mut);width:100%;line-height:1.5;margin-top:2px}
+
+/* CARD */
+.card{background:white;border:1px solid var(--beige);border-radius:14px;padding:24px;margin-bottom:0}
+.section-hdr{display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-top:24px;border-top:2px solid var(--beige)}
+.section-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:300;color:var(--green)}
+.section-title em{font-style:italic;color:var(--acc2)}
+.section-badge{font-size:11px;color:var(--mut);background:var(--beige);padding:3px 10px;border-radius:10px}
+.card-desc{font-size:13px;color:var(--mut);margin-bottom:18px;line-height:1.5}
+.fl{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--acc);display:block;margin-bottom:4px}
+input[type=text],select,textarea{width:100%;background:var(--cream);border:1px solid var(--sand);border-radius:7px;padding:9px 12px;font-family:inherit;font-size:13px;color:var(--txt);outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--green)}
+textarea{resize:vertical;min-height:64px}
+.fields-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field-gap{margin-top:12px}
+
+/* TABS */
+.tabs{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:18px}
+.tb{padding:6px 14px;border-radius:20px;border:1px solid var(--sand);background:white;font-family:inherit;font-size:12px;cursor:pointer;color:var(--mut);transition:all .15s}
+.tb.on{background:var(--green);color:var(--cream);border-color:var(--green);font-weight:500}
+.tb:hover:not(.on){background:var(--beige)}
+.pill{display:inline-block;font-size:10px;padding:2px 9px;border-radius:10px;font-weight:500;margin-bottom:8px;letter-spacing:.04em;text-transform:uppercase}
+.p1{background:#E8F0EE;color:#2C4A3E}.p2{background:#F0EBE6;color:#4A3728}
+.p3{background:#EAF0E8;color:#3A5438}.p4{background:#F0EBE0;color:#5A4030}
+
+/* BUTTONS */
+.btn-row{display:flex;gap:8px;align-items:center;margin-top:16px;flex-wrap:wrap}
+.btn-gen{background:var(--green);color:var(--cream);border:none;border-radius:7px;padding:10px 22px;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer}
+.btn-gen:hover:not(:disabled){background:var(--green2)}
+.btn-gen:disabled{opacity:.4;cursor:not-allowed}
+.btn-copy{background:transparent;color:var(--green);border:1.5px solid var(--green);border-radius:7px;padding:9px 18px;font-family:inherit;font-size:12px;cursor:pointer;display:none}
+.btn-copy:hover{background:var(--beige)}
+.btn-canva{background:#7B2D8B;color:white;border:none;border-radius:7px;padding:10px 22px;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;display:none}
+.btn-canva:hover{background:#6a2578}
+.loading{font-size:12px;color:var(--mut);font-style:italic;display:none;margin-top:8px}
+.err-box{display:none;margin-top:10px;background:#FDF0EE;border:1px solid #f5c4b3;border-radius:8px;padding:10px 14px;font-size:12px;color:var(--brown)}
+
+/* OUTPUT — SLIDES */
+.slides-output{margin-top:16px;display:none}
+.slides-label{font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--acc);margin-bottom:12px}
+.slide-card{background:white;border:1px solid var(--beige);border-radius:10px;padding:16px 18px;margin-bottom:10px;border-left:3px solid var(--green)}
+.slide-num{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);margin-bottom:4px}
+.slide-headline{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:400;color:var(--green);margin-bottom:6px;line-height:1.2}
+.slide-body{font-size:13px;color:var(--txt);line-height:1.65}
+.slide-card.cover{border-left-color:var(--acc2);background:#FDFAF5}
+.slide-card.cta{border-left-color:var(--brown);background:#FAF7F2}
+
+/* RAW OUTPUT fallback */
+.output{margin-top:16px;background:var(--green);border-radius:12px;padding:18px 20px;display:none}
+.out-label{font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:rgba(250,247,242,.45);margin-bottom:10px}
+.out-text{font-size:13px;color:var(--cream);line-height:1.8;white-space:pre-wrap;word-wrap:break-word;max-height:500px;overflow-y:auto}
+
+.tip{margin-top:12px;font-size:11px;color:var(--mut);background:var(--beige);border-radius:7px;padding:9px 12px;line-height:1.5}
+.divider{height:2px;background:var(--beige);margin:32px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <div class="logo">AVELYST — <em>Carousel Generator</em></div>
+      <div class="sub">Phase 2B · Content Production</div>
+    </div>
+    <a href="index.html" style="font-size:12px;color:var(--mut);text-decoration:none">← Dashboard</a>
+  </header>
+
+  <!-- API KEY -->
+  <div class="api-banner" id="apiBanner">
+    <span class="api-label">🔑 API Key</span>
+    <input class="api-input" type="password" id="apiKeyInput" placeholder="sk-ant-api03-...">
+    <button class="api-save" onclick="saveKey()">Save</button>
+    <span class="api-status" id="apiStatus">✓ Key saved</span>
+    <div class="api-note">Stored only in your browser. Get your key at <a href="https://platform.anthropic.com/api-keys" target="_blank" style="color:var(--green);font-weight:500">platform.anthropic.com/api-keys</a></div>
+  </div>
+
+  <!-- CAROUSEL TYPE TABS -->
+  <div class="tabs">
+    <button class="tb on" onclick="sw('edu',this)">🧠 Educational</button>
+    <button class="tb" onclick="sw('checklist',this)">✅ Checklist</button>
+    <button class="tb" onclick="sw('journey',this)">🌟 Patient Journey</button>
+    <button class="tb" onclick="sw('service',this)">🏥 Service</button>
+  </div>
+
+  <!-- CAROUSEL FORM -->
+  <div class="card" id="form-area"></div>
+
+  <!-- CAPTION GENERATOR -->
+  <div style="margin-top:32px">
+    <div class="section-hdr">
+      <div class="section-title">✍️ Caption <em>Generator</em></div>
+      <div class="section-badge">Step 2 — after carousel copy is ready</div>
+    </div>
+    <div class="card">
+      <div class="card-desc">Generates a bilingual Thai+English caption with hashtags — pre-loaded with your topic above.</div>
+      <div>
+        <label class="fl">Additional caption notes (optional)</label>
+        <input type="text" id="cap-notes" placeholder="e.g. emphasise the no-guilt angle, add a question at the end, mention Bangkok clinic">
+      </div>
+      <div class="btn-row">
+        <button class="btn-gen" id="cap-btn" onclick="generateCaption()">✦ Generate Caption</button>
+        <button class="btn-copy" id="cap-copy" onclick="copyCaption()" style="display:none">Copy Caption</button>
+      </div>
+      <div class="loading" id="cap-loading" style="display:none">Writing your caption…</div>
+      <div class="err-box" id="cap-err"></div>
+      <div class="output" id="cap-output" style="display:none">
+        <div class="out-label">Generated Caption (TH + EN + Hashtags)</div>
+        <div class="out-text" id="cap-text"></div>
+      </div>
+      <div class="tip">💡 Caption goes in the post description when you publish the carousel on Instagram/Facebook</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const SP = `=== AVELYST MASTER BRAND FRAMEWORK ===
+Clinic: Avelyst — physician-led Weight Management & Metabolic Health, Bangkok
+Doctor: Dr. Weeraporn Srisung MD — American Board Internal Medicine & Nephrology certified, Obesity Medicine candidate. Mother of 3. Warm, direct, bilingual Thai/English.
+Audience: Thai & expat Bangkokians 40–60, 200K+ THB/month HH income, frustrated by failed diets, want evidence-based care.
+Voice: Warm, honest, non-judgmental. Validate struggle first. Science-backed but simple. Never shame or promise rapid results.
+Core truth: "It's not your fault — it's your biology. And we can help."
+`;
+
+const TYPES = {
+  edu: {
+    l:'Educational', p:1, c:'p1',
+    d:'Teach a medical concept slide by slide — high save rate (Pillar 1)',
+    f:[
+      {i:'topic', l:'Topic', ph:'e.g. ทำไม metabolism ถึงช้าลงเมื่ออายุมากขึ้น'},
+      {i:'slides', l:'Number of slides', sel:['5 slides','7 slides','9 slides'], def:'7 slides'},
+      {i:'extra', l:'Additional notes (optional)', ph:'e.g. เน้น muscle mass, ใส่ข้อมูลงานวิจัย, tone ให้เข้าใจง่าย', ta:true},
+    ],
+    q: v => `${SP}\nCreate a ${v.slides||'7 slides'} Instagram carousel about: "${v.topic}"\n${v.extra?`Additional notes: ${v.extra}`:''}
+
+For EACH slide write:
+SLIDE [N] — [TYPE: COVER/CONTENT/CTA]
+HEADLINE: (max 8 words, punchy)
+BODY: (2-3 sentences, educational, simple analogy where possible)
+THAI VERSION:
+HEADLINE: ...
+BODY: ...
+
+Make Slide 1 a scroll-stopping cover. Last slide = warm CTA to DM or follow.
+Keep language warm, evidence-based, non-judgmental throughout.`
+  },
+  checklist: {
+    l:'Checklist', p:2, c:'p2',
+    d:'"X warning signs / things to do" — highest save and share rate (Pillar 2)',
+    f:[
+      {i:'topic', l:'Checklist topic', ph:'e.g. 7 สัญญาณว่า metabolism ของคุณต้องการความช่วยเหลือ'},
+      {i:'format', l:'Format', sel:['Warning signs','Things to DO','Things to AVOID','Questions to ask your doctor'], def:'Warning signs'},
+      {i:'extra', l:'Additional notes (optional)', ph:'e.g. เน้นกลุ่มผู้หญิงอายุ 40+', ta:true},
+    ],
+    q: v => `${SP}\nCreate a checklist Instagram carousel: "${v.topic}" (Format: ${v.format||'Warning signs'})\n${v.extra?`Notes: ${v.extra}`:''}
+
+For EACH slide:
+SLIDE [N] — [COVER/ITEM/CTA]
+HEADLINE: (the checklist item — max 8 words)
+BODY: (1-2 sentences explaining WHY this matters — make it feel like insider knowledge)
+THAI VERSION:
+HEADLINE: ...
+BODY: ...
+
+Slide 1 = attention-grabbing cover with the full list title. Last slide = encouraging CTA.`
+  },
+  journey: {
+    l:'Patient Journey', p:2, c:'p2',
+    d:'Anonymised transformation story — struggle → discovery → result (Pillar 2)',
+    f:[
+      {i:'profile', l:'Patient profile (anonymised)', ph:'e.g. หญิง 45 ปี ลูก 2 คน พยายามลดน้ำหนักมา 5 ปี', ta:true},
+      {i:'root', l:'Root cause discovered', ph:'e.g. Insulin resistance รุนแรงที่ไม่ได้รับการแก้ไข'},
+      {i:'result', l:'Outcome / result', ph:'e.g. ลด 8 กก. ใน 3 เดือน HbA1c ดีขึ้น'},
+    ],
+    q: v => `${SP}\nCreate a patient journey Instagram carousel (8 slides).\nPatient: "${v.profile}"\nRoot cause: "${v.root}"\nResult: "${v.result}"
+
+Slides:
+1. COVER — hook with the struggle (relatable to viewer)
+2. Her background and what she'd tried before
+3. The turning point — discovering the real cause
+4. Starting at Avelyst — the approach
+5. What changed (habits, mindset, treatment)
+6. The result — specific but realistic
+7. Her words — a quote-style reflection (anonymised)
+8. CTA — warm invite to consult
+
+For EACH slide:
+SLIDE [N] — [title]
+HEADLINE: ...
+BODY: ...
+THAI VERSION:
+HEADLINE: ...
+BODY: ...
+
+Never over-promise. Keep completely anonymised.`
+  },
+  service: {
+    l:'Service', p:4, c:'p4',
+    d:'Introduce Avelyst\'s services — warm, never pushy (Pillar 4)',
+    f:[
+      {i:'service', l:'Service to highlight', ph:'e.g. Initial consultation + metabolic assessment'},
+      {i:'pain', l:'Pain point it solves', ph:'e.g. ไม่รู้ว่า metabolism ของตัวเองมีปัญหาอะไร'},
+      {i:'extra', l:'Additional notes (optional)', ph:'e.g. เน้นว่าต่างจากคลินิกทั่วไปอย่างไร', ta:true},
+    ],
+    q: v => `${SP}\nCreate a 6-slide service introduction carousel for: "${v.service}"\nPain point it solves: "${v.pain}"\n${v.extra?`Notes: ${v.extra}`:''}
+
+Slides:
+1. COVER — start with the patient's feeling, not the service name
+2. The problem we solve (pain point)
+3. What makes Avelyst different
+4. What the service includes (simply explained)
+5. What to expect at your first visit
+6. CTA — warm, specific, no pressure
+
+For EACH slide:
+SLIDE [N] — [title]
+HEADLINE: ...
+BODY: ...
+THAI VERSION:
+HEADLINE: ...
+BODY: ...`
+  },
+};
+
+let cur = 'edu';
+let prefillTopic = '';
+let rawOutput = '';
+
+window.addEventListener('DOMContentLoaded', () => {
+  // Load API key
+  const key = localStorage.getItem('avelyst_api_key');
+  if (key) {
+    document.getElementById('apiKeyInput').value = key;
+    document.getElementById('apiStatus').style.display = 'inline';
+    document.getElementById('apiBanner').classList.add('saved');
+  }
+  // Read URL params from dashboard
+  const params = new URLSearchParams(window.location.search);
+  prefillTopic = params.get('topic') || '';
+  const pillarParam = params.get('pillar');
+  if (pillarParam) {
+    const map = {'1':'edu','2':'checklist','3':'edu','4':'service'};
+    cur = map[pillarParam] || 'edu';
+    document.querySelectorAll('.tb').forEach((b,i) => {
+      b.classList.toggle('on', ['edu','checklist','journey','service'][i] === cur);
+    });
+  }
+  render();
+  if (prefillTopic) {
+    const banner = document.createElement('div');
+    banner.style.cssText = 'background:#E8F0EE;border:1px solid #b2d0c8;border-radius:10px;padding:10px 16px;margin-bottom:16px;font-size:12px;color:#2C4A3E;';
+    banner.innerHTML = '📅 <strong>Opened from dashboard</strong> — topic pre-filled from your content calendar.';
+    document.getElementById('form-area').insertAdjacentElement('beforebegin', banner);
+  }
+});
+
+function saveKey() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key) return;
+  localStorage.setItem('avelyst_api_key', key);
+  document.getElementById('apiStatus').style.display = 'inline';
+  document.getElementById('apiBanner').classList.add('saved');
+  const btn = event.currentTarget;
+  btn.textContent = 'Saved ✓';
+  setTimeout(() => btn.textContent = 'Save', 1500);
+}
+
+function getKey() {
+  return localStorage.getItem('avelyst_api_key') || document.getElementById('apiKeyInput').value.trim();
+}
+
+function sw(t, btn) {
+  cur = t;
+  prefillTopic = '';
+  document.querySelectorAll('.tb').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  render();
+}
+
+function getVals() {
+  const v = {};
+  TYPES[cur].f.forEach(f => {
+    const el = document.getElementById('fi-'+f.i);
+    if (el) v[f.i] = el.value;
+  });
+  return v;
+}
+
+function getTopic() {
+  return document.getElementById('fi-topic')?.value ||
+         document.getElementById('fi-service')?.value ||
+         prefillTopic || '';
+}
+
+function render() {
+  const T = TYPES[cur];
+  const fhtml = T.f.map(f => {
+    const isTopicField = f.i === 'topic' || f.i === 'service';
+    const val = isTopicField ? prefillTopic : '';
+    return `<div class="field-gap">
+      <label class="fl">${f.l}</label>
+      ${f.sel
+        ? `<select id="fi-${f.i}">${f.sel.map(o=>`<option${o===f.def?' selected':''}>${o}</option>`).join('')}</select>`
+        : f.ta
+          ? `<textarea id="fi-${f.i}" placeholder="${f.ph}">${val}</textarea>`
+          : `<input type="text" id="fi-${f.i}" placeholder="${f.ph}" value="${val.replace(/"/g,'&quot;')}">`}
+    </div>`;
+  }).join('');
+
+  document.getElementById('form-area').innerHTML = `
+    <span class="pill ${T.c}">Pillar ${T.p} — ${T.l}</span>
+    <div class="card-desc">${T.d}</div>
+    ${fhtml}
+    <div class="btn-row">
+      <button class="btn-gen" id="btn-gen" onclick="generate()">✦ Generate Carousel Copy</button>
+      <button class="btn-copy" id="btn-copy" onclick="copyRaw()" style="display:none">Copy All</button>
+      <button class="btn-canva" id="btn-canva" onclick="pushToCanva()" style="display:none">🎨 Create in Canva</button>
+    </div>
+    <div class="loading" id="loading" style="display:none">Writing your carousel…</div>
+    <div class="err-box" id="err-box"></div>
+    <div class="slides-output" id="slides-output">
+      <div class="slides-label">Carousel Slides</div>
+      <div id="slides-container"></div>
+    </div>
+    <div class="tip">💡 After generating: click "Create in Canva" to auto-build the artwork, then generate your caption below</div>
+  `;
+}
+
+async function generate() {
+  const key = getKey();
+  if (!key || !key.startsWith('sk-')) {
+    showErr('err-box', '⚠️ Please enter your Anthropic API key above first.');
+    return;
+  }
+  const T = TYPES[cur];
+  const vals = getVals();
+  const prompt = T.q(vals);
+
+  const btn = document.getElementById('btn-gen');
+  const loading = document.getElementById('loading');
+  const errBox = document.getElementById('err-box');
+  const slidesOut = document.getElementById('slides-output');
+  const copyBtn = document.getElementById('btn-copy');
+  const canvaBtn = document.getElementById('btn-canva');
+
+  btn.disabled = true;
+  loading.style.display = 'block';
+  slidesOut.style.display = 'none';
+  copyBtn.style.display = 'none';
+  canvaBtn.style.display = 'none';
+  errBox.style.display = 'none';
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-5',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    if (data.error) {
+      showErr('err-box', `⚠️ API error: ${data.error.message}`);
+    } else {
+      rawOutput = data.content?.map(b => b.text || '').join('') || '';
+      renderSlides(rawOutput);
+      slidesOut.style.display = 'block';
+      copyBtn.style.display = 'inline-block';
+      canvaBtn.style.display = 'inline-block';
+    }
+  } catch(e) {
+    showErr('err-box', '⚠️ Connection failed. Check your API key.');
+  }
+  btn.disabled = false;
+  loading.style.display = 'none';
+}
+
+function renderSlides(text) {
+  // Parse slides from output
+  const container = document.getElementById('slides-container');
+  const slideBlocks = text.split(/SLIDE \d+/i).filter(s => s.trim());
+
+  if (slideBlocks.length < 2) {
+    // Fallback: show as raw text
+    container.innerHTML = `<div style="background:var(--green);border-radius:12px;padding:18px 20px"><div style="font-size:13px;color:var(--cream);line-height:1.8;white-space:pre-wrap">${text}</div></div>`;
+    return;
+  }
+
+  // Re-attach "SLIDE N" labels
+  const lines = text.split('\n');
+  const slides = [];
+  let current = null;
+  lines.forEach(line => {
+    if (/^SLIDE \d+/i.test(line.trim())) {
+      if (current) slides.push(current);
+      current = { header: line.trim(), lines: [] };
+    } else if (current) {
+      current.lines.push(line);
+    }
+  });
+  if (current) slides.push(current);
+
+  container.innerHTML = slides.map((s, i) => {
+    const isCover = i === 0;
+    const isCTA = i === slides.length - 1;
+    const cls = isCover ? 'slide-card cover' : isCTA ? 'slide-card cta' : 'slide-card';
+    const content = s.lines.join('\n').trim();
+    // Extract headline
+    const headlineMatch = content.match(/HEADLINE:\s*(.+)/i);
+    const headline = headlineMatch ? headlineMatch[1].trim() : '';
+    const body = content.replace(/HEADLINE:\s*.+\n?/i, '').trim();
+    return `<div class="${cls}">
+      <div class="slide-num">${s.header}</div>
+      ${headline ? `<div class="slide-headline">${headline}</div>` : ''}
+      <div class="slide-body">${body.replace(/\n/g,'<br>')}</div>
+    </div>`;
+  }).join('');
+}
+
+function copyRaw() {
+  navigator.clipboard.writeText(rawOutput).then(() => {
+    const b = document.getElementById('btn-copy');
+    b.textContent = 'Copied!';
+    setTimeout(() => b.textContent = 'Copy All', 1500);
+  });
+}
+
+async function pushToCanva() {
+  const btn = document.getElementById('btn-canva');
+  btn.textContent = 'Creating in Canva…';
+  btn.disabled = true;
+  const topic = getTopic();
+  try {
+    sendPrompt(`Create a Canva carousel presentation for Avelyst clinic with this content:\n\nTopic: ${topic}\n\n${rawOutput}\n\nUse Avelyst brand: cream/beige background, dark green (#2C4A3E) headers, DM Sans body font, Cormorant Garamond for large display text. Professional, warm, premium medical aesthetic. Portrait format 1080x1350px per slide.`);
+  } catch(e) {
+    btn.textContent = '🎨 Create in Canva';
+    btn.disabled = false;
+  }
+}
+
+function showErr(id, msg) {
+  const el = document.getElementById(id);
+  if (el) { el.textContent = msg; el.style.display = 'block'; }
+}
+
+// ─── CAPTION GENERATOR ───────────────────────────────────────
+async function generateCaption() {
+  const key = getKey();
+  if (!key || !key.startsWith('sk-')) {
+    showErr('cap-err', '⚠️ Please enter your API key above first.');
+    return;
+  }
+  const topic = getTopic();
+  const capNotes = document.getElementById('cap-notes').value.trim();
+
+  const prompt = `${SP}
+
+Write a bilingual Instagram/Facebook caption for a carousel post about: "${topic}"
+Format: ${TYPES[cur].l} carousel
+${capNotes ? `Additional notes: ${capNotes}` : ''}
+
+THAI CAPTION (150-200 words):
+- Storytelling hook that validates the reader's struggle
+- Key insight or tips backed by science, explained simply
+- Warm soft CTA (save, comment, or DM)
+
+---
+
+ENGLISH CAPTION (100-150 words):
+- Same structure, natural translation (not word-for-word)
+
+HASHTAGS (20 tags, mix Thai + English):`;
+
+  const btn = document.getElementById('cap-btn');
+  const loading = document.getElementById('cap-loading');
+  const output = document.getElementById('cap-output');
+  const outText = document.getElementById('cap-text');
+  const copyBtn = document.getElementById('cap-copy');
+  const errBox = document.getElementById('cap-err');
+
+  btn.disabled = true;
+  loading.style.display = 'block';
+  output.style.display = 'none';
+  copyBtn.style.display = 'none';
+  errBox.style.display = 'none';
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-5',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    if (data.error) {
+      showErr('cap-err', `⚠️ ${data.error.message}`);
+    } else {
+      const text = data.content?.map(b => b.text || '').join('') || 'Error — try again.';
+      outText.textContent = text;
+      output.style.display = 'block';
+      copyBtn.style.display = 'inline-block';
+    }
+  } catch(e) {
+    showErr('cap-err', '⚠️ Connection failed. Check your API key.');
+  }
+  btn.disabled = false;
+  loading.style.display = 'none';
+}
+
+function copyCaption() {
+  navigator.clipboard.writeText(document.getElementById('cap-text').textContent).then(() => {
+    const b = document.getElementById('cap-copy');
+    b.textContent = 'Copied!';
+    setTimeout(() => b.textContent = 'Copy Caption', 1500);
+  });
+}
+</script>
+</body>
+</html>

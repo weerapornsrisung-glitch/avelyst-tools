@@ -104,6 +104,31 @@ input:focus,select:focus{border-color:var(--green)}
 
   <div id="form-area"></div>
 
+  <!-- CAPTION GENERATOR -->
+  <div style="margin-top:32px">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-top:24px;border-top:2px solid var(--beige)">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:300;color:var(--green)">✍️ Caption <em style="font-style:italic;color:var(--acc2)">Generator</em></div>
+      <div style="font-size:11px;color:var(--mut);background:var(--beige);padding:3px 10px;border-radius:10px">Step 2 — after your script is ready</div>
+    </div>
+    <div class="card">
+      <div style="font-size:13px;color:var(--mut);margin-bottom:16px;line-height:1.5">Generates a bilingual Thai+English caption with hashtags — pre-loaded with your topic above.</div>
+      <div>
+        <label class="fl">Additional caption notes (optional)</label>
+        <input type="text" id="cap-notes" placeholder="e.g. emphasise the no-guilt angle, add a question at the end, mention Bangkok clinic" style="width:100%;background:var(--cream);border:1px solid var(--sand);border-radius:7px;padding:9px 12px;font-family:inherit;font-size:13px;color:var(--txt);outline:none">
+      </div>
+      <div class="btn-row">
+        <button class="btn-gen" id="cap-btn" onclick="generateCaption()">✦ Generate Caption</button>
+        <button class="btn-copy" id="cap-copy" onclick="copyCaption()" style="display:none">Copy Caption</button>
+      </div>
+      <div class="loading" id="cap-loading" style="display:none">Writing your caption…</div>
+      <div id="cap-err" style="display:none;margin-top:10px;background:#FDF0EE;border:1px solid #f5c4b3;border-radius:8px;padding:10px 14px;font-size:12px;color:var(--brown)"></div>
+      <div class="output" id="cap-output" style="display:none">
+        <div class="out-label">Generated Caption (TH + EN + Hashtags)</div>
+        <div class="out-text" id="cap-text"></div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -383,6 +408,95 @@ function copyOut() {
     const b = document.getElementById('btn-copy');
     b.textContent = 'Copied!';
     setTimeout(() => b.textContent = 'Copy Script', 1500);
+  });
+}
+
+// ─── CAPTION GENERATOR ───────────────────────────────────────
+function getTopic() {
+  return document.getElementById('fi-topic')?.value ||
+         document.getElementById('fi-svc')?.value ||
+         prefillTopic || '';
+}
+
+async function generateCaption() {
+  const key = getKey();
+  if (!key || !key.startsWith('sk-')) {
+    document.getElementById('cap-err').style.display = 'block';
+    return;
+  }
+  const topic = getTopic();
+  const capNotes = document.getElementById('cap-notes').value.trim();
+
+  const prompt = `${SP}
+
+Write a bilingual Instagram/Facebook caption for a ${TYPES[cur].l} post about: "${topic}"
+${capNotes ? `Additional notes: ${capNotes}` : ''}
+
+Format:
+THAI CAPTION (150-200 words):
+- Start with a storytelling hook that validates the reader's struggle
+- Body: insight or tips backed by science, explained simply
+- End with a warm soft CTA (save, comment, or DM)
+
+---
+
+ENGLISH CAPTION (100-150 words):
+- Same structure, natural translation
+
+HASHTAGS (20 tags, mix Thai + English):
+#... #...`;
+
+  const btn = document.getElementById('cap-btn');
+  const loading = document.getElementById('cap-loading');
+  const output = document.getElementById('cap-output');
+  const outText = document.getElementById('cap-text');
+  const copyBtn = document.getElementById('cap-copy');
+  const errBox = document.getElementById('cap-err');
+
+  btn.disabled = true;
+  loading.style.display = 'block';
+  output.style.display = 'none';
+  copyBtn.style.display = 'none';
+  errBox.style.display = 'none';
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-5',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    if (data.error) {
+      errBox.style.display = 'block';
+      errBox.textContent = `⚠️ ${data.error.message}`;
+    } else {
+      const text = data.content?.map(b => b.text || '').join('') || 'Error — try again.';
+      outText.textContent = text;
+      output.style.display = 'block';
+      copyBtn.style.display = 'inline-block';
+    }
+  } catch(e) {
+    errBox.style.display = 'block';
+    errBox.textContent = '⚠️ Connection failed. Check your API key.';
+  }
+  btn.disabled = false;
+  loading.style.display = 'none';
+}
+
+function copyCaption() {
+  navigator.clipboard.writeText(document.getElementById('cap-text').textContent).then(() => {
+    const b = document.getElementById('cap-copy');
+    b.textContent = 'Copied!';
+    setTimeout(() => b.textContent = 'Copy Caption', 1500);
   });
 }
 </script>
