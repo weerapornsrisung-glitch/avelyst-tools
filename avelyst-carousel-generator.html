@@ -478,22 +478,19 @@ async function pushToCanva() {
   btn.disabled = true;
 
   const topic = getTopic();
-  const canvaPrompt = `Create a Canva carousel presentation for Avelyst clinic.
+  const canvaPrompt = `Create a Canva carousel presentation for Avelyst clinic using brand_kit_id "kAD7wYbvzek".
 
 Topic: ${topic}
 
 Slide content:
 ${rawOutput}
 
-Design requirements:
-- Use Avelyst brand aesthetic: cream/white background, dark green (#2C4A3E) for headers, warm brown accents
-- Cormorant Garamond for display headlines, DM Sans for body text
-- Premium, clean, medical but warm — not clinical/cold
-- Portrait format, Instagram carousel size
-- Each slide should have the headline large and prominent, body text readable
-- Cover slide should be the most visually striking
-
-Please create this as a Canva presentation with multiple slides.`;
+Requirements:
+- Use Avelyst brand kit (kAD7wYbvzek) for all colors, fonts, and styles
+- Create as a presentation with one slide per carousel card
+- Portrait format for Instagram carousel
+- Each slide: large headline + body text, clean layout
+- Cover slide most visually prominent`;
 
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -508,7 +505,8 @@ Please create this as a Canva presentation with multiple slides.`;
         model: 'claude-sonnet-4-5',
         max_tokens: 1000,
         mcp_servers: [{ type: 'url', url: 'https://mcp.canva.com/mcp', name: 'canva' }],
-        messages: [{ role: 'user', content: canvaPrompt }]
+        messages: [{ role: 'user', content: canvaPrompt }],
+        system: `When creating Canva designs, ALWAYS use brand_kit_id: "kAD7wYbvzek" for Avelyst's brand colors and fonts. Create as a presentation type for carousel format.`
       })
     });
     const data = await res.json();
