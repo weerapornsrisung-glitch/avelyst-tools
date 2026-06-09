@@ -281,7 +281,7 @@ Search for trending content about: "${topicText}"
 Sources: ${sourcesText}
 Region: ${regionText}
 
-Search for viral posts, videos, and articles on these topics. Include Thai content where relevant.
+For each result, find the DIRECT URL to the actual video, post, or article (not a search page). For YouTube find the actual youtube.com/watch?v= URL. For Instagram find the actual instagram.com/p/ URL. For news find the actual article URL.
 
 Return exactly 8 content ideas as JSON:
 {
@@ -290,7 +290,7 @@ Return exactly 8 content ideas as JSON:
       "topic": "content topic/hook",
       "source_type": "youtube|instagram|linkedin|pubmed|news|trends",
       "source_name": "channel/publication name",
-      "source_url": "URL if found",
+      "source_url": "DIRECT URL to the actual video/post/article",
       "why_it_works": "why this performs well (1-2 sentences)",
       "avelyst_angle": "how Dr. Weeraporn should adapt this (2-3 sentences)",
       "hook": "Thai opening hook for Avelyst version",
@@ -419,7 +419,8 @@ function renderResults(results, topic, regionText) {
         <span class="rc-tag">${r.format}</span>
       </div>
 
-      <button class="btn-copy-idea" onclick="copyIdea(${i})">Copy This Idea</button>
+      <button class="btn-copy-idea" onclick="copyIdea(${i})" title="Copies topic + angle — paste into dashboard Notes field">📋 Copy to Dashboard</button>
+      <button class="btn-copy-idea" onclick="copyIdeaFull(${i})" style="margin-left:6px;border-color:var(--acc);color:var(--acc)" title="Copies full research details">Copy Full</button>
     </div>`;
   }).join('');
 
@@ -429,6 +430,18 @@ function renderResults(results, topic, regionText) {
 }
 
 function formatIdea(r, i) {
+  // Dashboard-friendly format: just topic + angle
+  return `${r.topic}
+
+${r.avelyst_angle}
+
+Hook: "${r.hook}"
+Format: ${r.format} | ${r.pillar} — ${r.pillar_name}
+Source: ${r.source_name} → ${r.source_url || 'N/A'}`;
+}
+
+function formatIdeaFull(r, i) {
+  // Full format for Copy All
   return `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 VIRAL IDEA #${i+1} — ${r.topic}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -442,9 +455,7 @@ ${r.why_it_works}
 AVELYST ANGLE:
 ${r.avelyst_angle}
 
-HOOK (Thai):
-"${r.hook}"
-
+HOOK (Thai): "${r.hook}"
 PILLAR: ${r.pillar} — ${r.pillar_name}
 FORMAT: ${r.format}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
@@ -453,15 +464,24 @@ FORMAT: ${r.format}
 function copyIdea(i) {
   const r = resultsData[i];
   if (!r) return;
-  const text = formatIdea(r, i);
-  navigator.clipboard.writeText(text).then(() => {
+  navigator.clipboard.writeText(formatIdea(r, i)).then(() => {
     const btn = document.querySelector(`#rc-${i} .btn-copy-idea`);
-    if (btn) { btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy This Idea', 1500); }
+    if (btn) { btn.textContent = '✓ Copied!'; setTimeout(() => btn.textContent = '📋 Copy to Dashboard', 1500); }
+  });
+}
+
+function copyIdeaFull(i) {
+  const r = resultsData[i];
+  if (!r) return;
+  navigator.clipboard.writeText(formatIdeaFull(r, i)).then(() => {
+    const btns = document.querySelectorAll(`#rc-${i} .btn-copy-idea`);
+    const btn = btns[1];
+    if (btn) { btn.textContent = '✓ Copied!'; setTimeout(() => btn.textContent = 'Copy Full', 1500); }
   });
 }
 
 function copyAll() {
-  const text = resultsData.map((r,i) => formatIdea(r,i)).join('\n\n');
+  const text = resultsData.map((r,i) => formatIdeaFull(r,i)).join('\n\n');
   navigator.clipboard.writeText(text).then(() => {
     const btn = event.currentTarget;
     btn.textContent = 'All Copied!';
