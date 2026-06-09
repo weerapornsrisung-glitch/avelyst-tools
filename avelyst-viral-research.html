@@ -344,8 +344,12 @@ Return ONLY valid JSON. No markdown.`;
       return;
     }
 
-    // Extract text from response
-    const text = data.content?.map(b => b.type === 'text' ? b.text : '').filter(Boolean).join('');
+    // Extract text from ALL content blocks including after tool use
+    const text = data.content?.map(b => {
+      if (b.type === 'text') return b.text;
+      if (b.type === 'tool_result') return b.content?.map(c => c.text||'').join('');
+      return '';
+    }).filter(Boolean).join('\n');
 
     // Parse JSON — strip markdown fences if present
     let parsed;
@@ -396,7 +400,11 @@ async function runWithoutSearch(prompt, topic, regionText, stepInterval) {
     });
     const data = await res.json();
     if (data.error) { showErr(`API error: ${data.error.message}`); resetBtn(); return; }
-    const text = data.content?.map(b => b.type === 'text' ? b.text : '').filter(Boolean).join('');
+    const text = data.content?.map(b => {
+      if (b.type === 'text') return b.text;
+      if (b.type === 'tool_result') return b.content?.map(c => c.text||'').join('');
+      return '';
+    }).filter(Boolean).join('\n');
     let parsed;
     try {
       const cleaned = text.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
