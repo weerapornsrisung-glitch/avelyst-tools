@@ -152,12 +152,25 @@ input[type=week]:focus{border-color:var(--green)}
 
   <!-- SETUP BANNER -->
   <div class="setup-banner" id="setupBanner">
-    <h3>🔑 Connect your Anthropic API Key</h3>
-    <p>Your API key is needed to generate scripts. It's stored only in your browser and never shared. Get yours free at <a href="https://platform.anthropic.com/api-keys" target="_blank" style="color:var(--green);font-weight:500">platform.anthropic.com/api-keys</a></p>
+    <h3>🔑 Anthropic API Key</h3>
+    <p>Needed to generate scripts. Stored only in your browser.</p>
     <div class="setup-row">
       <input class="setup-input" type="password" id="apiKeyInput" placeholder="sk-ant-api03-...">
-      <button class="setup-btn" onclick="saveApiKey()">Save Key</button>
-      <span class="setup-status" id="apiStatus">✓ Key saved</span>
+      <button class="setup-btn" id="saveKeyBtn" onclick="saveApiKey()">Save Key</button>
+      <span class="setup-status" id="apiStatus">✓ Saved</span>
+    </div>
+  </div>
+
+  <!-- IMPORT BANNER -->
+  <div id="importBanner" style="background:white;border:1.5px solid var(--acc2);border-radius:14px;padding:20px 24px;margin-bottom:24px;display:none">
+    <div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:300;color:var(--brown);margin-bottom:6px">📋 Import from Google Sheets</div>
+    <p style="font-size:12px;color:var(--mut);margin-bottom:12px;line-height:1.6">
+      Open your <a href="https://docs.google.com/spreadsheets/d/1mA9LLx47un4ETaPijNEC_kCAVKyhrttf9xPyeKxCHXY" target="_blank" style="color:var(--green);font-weight:500">Google Sheet</a> → select all data (Ctrl+A) → copy (Ctrl+C) → paste below:
+    </p>
+    <textarea id="pasteArea" placeholder="Paste your Google Sheet data here..." style="width:100%;height:100px;background:var(--cream);border:1px solid var(--sand);border-radius:8px;padding:10px 12px;font-family:inherit;font-size:12px;color:var(--txt);outline:none;resize:vertical;margin-bottom:10px"></textarea>
+    <div style="display:flex;gap:8px">
+      <button onclick="importPasted()" style="background:var(--green);color:var(--cream);border:none;border-radius:7px;padding:9px 20px;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer">✦ Import Data</button>
+      <button onclick="document.getElementById('importBanner').style.display='none'" style="background:transparent;color:var(--mut);border:1px solid var(--sand);border-radius:7px;padding:9px 16px;font-family:inherit;font-size:12px;cursor:pointer">Cancel</button>
     </div>
   </div>
 
@@ -166,10 +179,10 @@ input[type=week]:focus{border-color:var(--green)}
     <div class="week-title">Content <em>Dashboard</em></div>
     <div class="week-controls">
       <button class="wbtn" onclick="jumpWeek(-1)">← Prev 5</button>
-      <button class="wbtn curr" id="btnThisWeek" onclick="jumpWeek(0)">First Unposted</button>
+      <button class="wbtn curr" onclick="jumpWeek(0)">First Unposted</button>
       <button class="wbtn" onclick="jumpWeek(1)">Next 5 →</button>
-      <input type="number" id="weekPicker" min="1" max="999" placeholder="Day #" onchange="jumpToWeekPicker(this.value)" style="width:80px;background:var(--cream);border:1px solid var(--sand);border-radius:7px;padding:6px 10px;font-family:inherit;font-size:12px;color:var(--txt);outline:none" title="Jump to day number">
-      <button class="gen-week-btn" onclick="loadFromSheet()">↺ Refresh Sheet</button>
+      <input type="number" id="weekPicker" min="1" max="999" placeholder="Day #" onchange="jumpToWeekPicker(this.value)" style="width:70px;background:var(--cream);border:1px solid var(--sand);border-radius:7px;padding:6px 10px;font-family:inherit;font-size:12px;color:var(--txt);outline:none">
+      <button class="gen-week-btn" onclick="showImport()">📋 Import Sheet</button>
     </div>
   </div>
 
@@ -183,12 +196,9 @@ input[type=week]:focus{border-color:var(--green)}
   </div>
 
   <div class="stats" id="stats"></div>
-
   <div class="sync-bar">
-    <span class="sync-status" id="syncStatus">Loading schedule from Google Sheets…</span>
-    <button class="sync-btn" onclick="loadFromSheet()">↺ Refresh from Sheet</button>
+    <span class="sync-status" id="syncStatus"></span>
   </div>
-
   <div class="posts-grid" id="postsGrid"></div>
 
   <div class="section-title">Production <em>Tools</em></div>
@@ -316,8 +326,17 @@ window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('setupBanner').style.borderColor = 'var(--beige)';
   }
 
-  // Load schedule from Sheet
-  loadFromSheet();
+  // Load schedule from localStorage if previously imported
+  const saved = localStorage.getItem('avelyst_schedule');
+  if (saved) {
+    try {
+      schedule = JSON.parse(saved);
+      setSyncStatus(`✓ ${Object.keys(schedule).length} posts loaded — click "📋 Import Sheet" to refresh`, 'ok');
+    } catch(e) {}
+  } else {
+    setSyncStatus('Click "📋 Import Sheet" to load your content plan', '');
+  }
+  renderWeek();
 });
 
 // ─── API KEY ─────────────────────────────────────────────────
@@ -327,29 +346,76 @@ function saveApiKey() {
   localStorage.setItem('avelyst_api_key', key);
   document.getElementById('apiStatus').style.display = 'inline';
   document.getElementById('setupBanner').style.borderColor = 'var(--beige)';
+  document.getElementById('saveKeyBtn').textContent = 'Saved ✓';
+  setTimeout(() => document.getElementById('saveKeyBtn').textContent = 'Save Key', 1500);
 }
 
-// ─── GOOGLE SHEETS ────────────────────────────────────────────
-async function loadFromSheet() {
-  setSyncStatus('Loading from Google Sheets…', '');
-  try {
-    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&sheet=Avelyst`;
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
-    const res = await fetch(url, { signal: controller.signal });
-    clearTimeout(timeout);
-    if (!res.ok) throw new Error('not accessible');
-    const csv = await res.text();
-    parseAvelystSheet(csv);
-    setSyncStatus(`✓ Loaded ${Object.keys(schedule).length} posts from Google Sheets`, 'ok');
-  } catch(e) {
-    const msg = e.name === 'AbortError'
-      ? 'Sheet timed out — share it: File → Share → Anyone with link → Viewer'
-      : 'Could not load Sheet — share it: File → Share → Anyone with link → Viewer';
-    setSyncStatus(`⚠ ${msg}`, 'err');
-  }
+// ─── IMPORT FROM PASTE ───────────────────────────────────────
+function showImport() {
+  document.getElementById('importBanner').style.display = 'block';
+  document.getElementById('importBanner').scrollIntoView({behavior:'smooth'});
+}
+
+function importPasted() {
+  const raw = document.getElementById('pasteArea').value.trim();
+  if (!raw) return;
+
+  // Parse as TSV (Google Sheets copies as tab-separated)
+  const lines = raw.split('\n').filter(l => l.trim());
+  // Find header row
+  const headerIdx = lines.findIndex(l => l.toLowerCase().includes('topic') || l.toLowerCase().includes('status'));
+  if (headerIdx === -1) { alert('Could not find header row. Make sure you copied from the top of the sheet.'); return; }
+
+  const dataLines = lines.slice(headerIdx + 1);
+  schedule = {};
+  let count = 0;
+
+  dataLines.forEach(line => {
+    const cols = line.split('\t').map(c => c.trim());
+    if (cols.length < 4) return;
+    const [day, topic, brief, format, phase, caption, hashtags, status, datePosted, contentLink] = cols;
+    const dayNum = parseInt(day);
+    if (!dayNum || !topic) return;
+
+    const fmt = format?.includes('Carousel') || format?.includes('🎠') ? 'Carousel'
+      : format?.includes('Clip') || format?.includes('🎬') ? 'Reel / TikTok'
+      : 'Single Post';
+
+    const st = status === 'Posted' ? 'Posted'
+      : status === 'Scheduled' ? 'In Progress'
+      : status === 'Approved' ? 'In Progress'
+      : status === 'Needs Review' ? 'In Progress'
+      : status === 'Draft' ? 'To Do'
+      : status || 'To Do';
+
+    const pillar = phase?.includes('Awareness') || phase?.includes('Education') ? 1
+      : phase?.includes('Trust') ? 3
+      : phase?.includes('Convert') || phase?.includes('Sell') ? 4
+      : 2;
+
+    schedule[`day-${dayNum}`] = {
+      day: dayNum, topic: topic.trim(), brief: brief?.trim() || '',
+      format: fmt, phase: phase?.trim() || '', status: st,
+      datePosted: datePosted?.trim() || '',
+      contentLink: contentLink?.trim() || '',
+      pillar, notes: '',
+    };
+    count++;
+  });
+
+  if (count === 0) { alert('No posts found. Make sure you copied the full sheet including headers.'); return; }
+
+  // Save to localStorage
+  localStorage.setItem('avelyst_schedule', JSON.stringify(schedule));
+  document.getElementById('importBanner').style.display = 'none';
+  document.getElementById('pasteArea').value = '';
+  setSyncStatus(`✓ Imported ${count} posts from Google Sheets`, 'ok');
+  jumpWeek(0);
   renderWeek();
 }
+
+// ─── GOOGLE SHEETS (kept for reference, not used) ─────────────
+async function loadFromSheet() { showImport(); }
 
 function parseAvelystSheet(csv) {
   const lines = csv.trim().split('\n');
