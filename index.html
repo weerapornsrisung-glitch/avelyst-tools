@@ -133,6 +133,8 @@ input[type=week]:focus{border-color:var(--green)}
     <span class="hdate" id="hdate"></span>
     <div class="nav-links">
       <a class="nav-link" href="avelyst-script-generator.html" target="_blank">🎬 Scripts</a>
+      <a class="nav-link" href="avelyst-carousel-generator.html" target="_blank">📱 Carousels</a>
+      <a class="nav-link" href="avelyst-viral-research.html" target="_blank">🔬 Research</a>
       <a class="nav-link" href="avelyst-calendar.html" target="_blank">🗓 Calendar</a>
       <a class="nav-link" id="sheetNavLink" href="https://docs.google.com/spreadsheets/d/1nTxQs1mzLK3riQ6p21rJQt0Cai0Nw0T10rvdY78sDGc" target="_blank">📊 Sheet</a>
     </div>
@@ -227,12 +229,12 @@ input[type=week]:focus{border-color:var(--green)}
       <div class="tool-desc">One piece of content → 5 formats instantly</div>
       <span class="tool-tag">Phase 2D</span>
     </div>
-    <div class="tool-card dim">
+    <a class="tool-card" href="avelyst-viral-research.html" target="_blank">
       <div class="tool-icon">🔬</div>
-      <div class="tool-name">Viral Research Agent</div>
-      <div class="tool-desc">Daily trending topics & competitor content analysis — auto-suggests new post ideas</div>
-      <span class="tool-tag">Phase 3</span>
-    </div>
+      <div class="tool-name">Viral Research Engine</div>
+      <div class="tool-desc">Daily trending topics from YouTube, Instagram, LinkedIn, PubMed & news — with Avelyst-adapted post ideas</div>
+      <span class="tool-tag">Live</span>
+    </a>
   </div>
 
 </div>
@@ -564,6 +566,9 @@ function renderWeek() {
     };
   });
 
+  // Load any saved edits (notes, topics, formats changed by user)
+  loadDashboardEdits();
+
   // Week label
   const mon = dates[0], fri = dates[4];
   document.getElementById('weekLabel').innerHTML =
@@ -668,6 +673,28 @@ function cardHTML(p, i) {
 function updateField(i, field, val) {
   weekData[i][field] = val;
   if (schedule[weekData[i].date]) schedule[weekData[i].date][field] = val;
+  // Save notes and topic changes immediately to localStorage
+  if (field === 'notes' || field === 'topic' || field === 'format') {
+    saveDashboardState();
+  }
+}
+
+function saveDashboardState() {
+  // Save current weekData edits keyed by date
+  const edits = {};
+  weekData.forEach(p => { edits[p.date] = p; });
+  const existing = JSON.parse(localStorage.getItem('avelyst_dashboard_edits') || '{}');
+  Object.assign(existing, edits);
+  localStorage.setItem('avelyst_dashboard_edits', JSON.stringify(existing));
+}
+
+function loadDashboardEdits() {
+  const edits = JSON.parse(localStorage.getItem('avelyst_dashboard_edits') || '{}');
+  weekData.forEach((p, i) => {
+    if (edits[p.date]) {
+      weekData[i] = { ...p, ...edits[p.date] };
+    }
+  });
 }
 
 function updateFormat(i, val) {
