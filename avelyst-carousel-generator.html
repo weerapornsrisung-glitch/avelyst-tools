@@ -347,6 +347,7 @@ function render() {
       <div class="slides-label">Carousel Slides</div>
       <div id="slides-container"></div>
     </div>
+    <div id="canva-result" style="display:none"></div>
     <div class="tip">💡 After generating: click "Create in Canva" to auto-build the artwork, then generate your caption below</div>
   `;
 }
@@ -437,7 +438,6 @@ function renderSlides(text) {
     const isCTA = i === slides.length - 1;
     const cls = isCover ? 'slide-card cover' : isCTA ? 'slide-card cta' : 'slide-card';
     const content = s.lines.join('\n').trim();
-    // Extract headline
     const headlineMatch = content.match(/HEADLINE:\s*(.+)/i);
     const headline = headlineMatch ? headlineMatch[1].trim() : '';
     const body = content.replace(/HEADLINE:\s*.+\n?/i, '').trim();
@@ -447,6 +447,16 @@ function renderSlides(text) {
       <div class="slide-body">${body.replace(/\n/g,'<br>')}</div>
     </div>`;
   }).join('');
+
+  // Also show full raw text so user can read and copy everything
+  const rawBox = document.createElement('div');
+  rawBox.style.cssText = 'margin-top:16px';
+  rawBox.innerHTML = `
+    <div style="font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--acc);margin-bottom:8px">Full Copy Text</div>
+    <div style="background:var(--green);border-radius:12px;padding:16px 20px">
+      <div style="font-size:12px;color:var(--cream);line-height:1.8;white-space:pre-wrap;word-wrap:break-word;max-height:400px;overflow-y:auto">${text}</div>
+    </div>`;
+  container.appendChild(rawBox);
 }
 
 function copyRaw() {
@@ -458,13 +468,80 @@ function copyRaw() {
 }
 
 async function pushToCanva() {
+  const key = getKey();
+  if (!key || !key.startsWith('sk-')) {
+    showErr('err-box', '⚠️ Please enter your API key above first.');
+    return;
+  }
   const btn = document.getElementById('btn-canva');
-  btn.textContent = 'Creating in Canva…';
+  btn.textContent = '⟳ Creating in Canva…';
   btn.disabled = true;
+
   const topic = getTopic();
+  const canvaPrompt = `Create a Canva carousel presentation for Avelyst clinic.
+
+Topic: ${topic}
+
+Slide content:
+${rawOutput}
+
+Design requirements:
+- Use Avelyst brand aesthetic: cream/white background, dark green (#2C4A3E) for headers, warm brown accents
+- Cormorant Garamond for display headlines, DM Sans for body text
+- Premium, clean, medical but warm — not clinical/cold
+- Portrait format, Instagram carousel size
+- Each slide should have the headline large and prominent, body text readable
+- Cover slide should be the most visually striking
+
+Please create this as a Canva presentation with multiple slides.`;
+
   try {
-    sendPrompt(`Create a Canva carousel presentation for Avelyst clinic with this content:\n\nTopic: ${topic}\n\n${rawOutput}\n\nUse Avelyst brand: cream/beige background, dark green (#2C4A3E) headers, DM Sans body font, Cormorant Garamond for large display text. Professional, warm, premium medical aesthetic. Portrait format 1080x1350px per slide.`);
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-5',
+        max_tokens: 1000,
+        mcp_servers: [{ type: 'url', url: 'https://mcp.canva.com/mcp', name: 'canva' }],
+        messages: [{ role: 'user', content: canvaPrompt }]
+      })
+    });
+    const data = await res.json();
+    if (data.error) {
+      showErr('err-box', `⚠️ Canva error: ${data.error.message}`);
+      btn.textContent = '🎨 Create in Canva';
+      btn.disabled = false;
+      return;
+    }
+    // Extract any URL from response
+    const text = data.content?.map(b => b.text || '').join('') || '';
+    const urlMatch = text.match(/https:\/\/www\.canva\.com\/design\/[^\s"')]+/);
+
+    // Show result
+    const resultBox = document.getElementById('canva-result');
+    if (urlMatch) {
+      resultBox.innerHTML = `
+        <div style="background:#E8F0EE;border:1px solid #b2d0c8;border-radius:10px;padding:14px 18px;margin-top:12px">
+          <div style="font-size:12px;font-weight:500;color:var(--green);margin-bottom:6px">✓ Canva design created!</div>
+          <a href="${urlMatch[0]}" target="_blank" style="font-size:13px;color:var(--green);font-weight:500">Open in Canva →</a>
+          <div style="font-size:11px;color:var(--mut);margin-top:6px;line-height:1.5">${text.substring(0,200)}...</div>
+        </div>`;
+    } else {
+      resultBox.innerHTML = `
+        <div style="background:#E8F0EE;border:1px solid #b2d0c8;border-radius:10px;padding:14px 18px;margin-top:12px">
+          <div style="font-size:12px;color:var(--green);line-height:1.65">${text.substring(0,400)}</div>
+        </div>`;
+    }
+    resultBox.style.display = 'block';
+    btn.textContent = '🎨 Create in Canva';
+    btn.disabled = false;
   } catch(e) {
+    showErr('err-box', '⚠️ Could not connect to Canva. Make sure your API key is valid.');
     btn.textContent = '🎨 Create in Canva';
     btn.disabled = false;
   }
