@@ -275,34 +275,25 @@ async function runResearch() {
   const sourcesText = selectedSources.join(', ');
   const topicText = topic || 'obesity medicine, weight management, metabolic health, GLP-1, weight loss';
 
-  const prompt = `${SP}
+  const prompt = `You are a viral content researcher for Avelyst, a Bangkok weight management clinic run by Dr. Weeraporn Srisung MD.
 
-You are a viral content research analyst for Avelyst clinic. Use web search to research trending content about: "${topicText}"
+Search for trending content about: "${topicText}"
+Sources: ${sourcesText}
+Region: ${regionText}
 
-Research these sources: ${sourcesText}
-Region focus: ${regionText}
+Search for viral posts, videos, and articles on these topics. Include Thai content where relevant.
 
-IMPORTANT: For each source, actually search for real current content. Search for:
-${sources.youtube ? '- YouTube: search "weight loss obesity GLP-1 metabolic health viral 2025 2026" and similar' : ''}
-${sources.instagram ? '- Instagram: search Google for "site:instagram.com OR instagram viral weight loss obesity medicine 2025 2026"' : ''}
-${sources.linkedin ? '- LinkedIn: search Google for "site:linkedin.com obesity medicine weight management doctor 2025 2026"' : ''}
-${sources.pubmed ? '- PubMed/Research: search for recent studies on obesity, GLP-1, metabolic health 2024 2025' : ''}
-${sources.news ? '- Health news: search for latest obesity/weight management news Thailand and international' : ''}
-${sources.trends ? '- Google Trends: what weight/health topics are trending in Thailand and globally right now' : ''}
-${region !== 'global' ? '- Also search in Thai: "ลดน้ำหนัก viral", "GLP-1 ไทย", "metabolism ไทย", "หมอลดน้ำหนัก"' : ''}
-
-Based on your research, generate exactly 8 viral content ideas for Avelyst. For each idea, respond in this EXACT JSON format:
-
+Return exactly 8 content ideas as JSON:
 {
   "results": [
     {
-      "topic": "The content topic/hook",
+      "topic": "content topic/hook",
       "source_type": "youtube|instagram|linkedin|pubmed|news|trends",
-      "source_name": "Channel/account/publication name",
-      "source_url": "actual URL if found, or best search URL",
-      "why_it_works": "Why this content performs well — engagement reason in 1-2 sentences",
-      "avelyst_angle": "How Dr. Weeraporn should adapt this for Avelyst — specific angle in 2-3 sentences",
-      "hook": "Specific opening hook in Thai for the Avelyst version",
+      "source_name": "channel/publication name",
+      "source_url": "URL if found",
+      "why_it_works": "why this performs well (1-2 sentences)",
+      "avelyst_angle": "how Dr. Weeraporn should adapt this (2-3 sentences)",
+      "hook": "Thai opening hook for Avelyst version",
       "pillar": "P1|P2|P3|P4",
       "pillar_name": "Science|Tips & Transform|Doctor's View|Services",
       "format": "Reel / TikTok|Carousel|Single Post|Story",
@@ -312,7 +303,7 @@ Based on your research, generate exactly 8 viral content ideas for Avelyst. For 
   ]
 }
 
-Return ONLY the JSON object. No preamble, no markdown, no explanation.`;
+Return ONLY valid JSON. No markdown.`;
 
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -325,7 +316,7 @@ Return ONLY the JSON object. No preamble, no markdown, no explanation.`;
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-5',
-        max_tokens: 4000,
+        max_tokens: 2000,
         tools: [{ type: 'web_search_20250305', name: 'web_search' }],
         messages: [{ role: 'user', content: prompt }]
       })
