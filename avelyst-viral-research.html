@@ -338,10 +338,14 @@ Return ONLY valid JSON. No markdown.`;
     // Extract text from response
     const text = data.content?.map(b => b.type === 'text' ? b.text : '').filter(Boolean).join('');
 
-    // Parse JSON
+    // Parse JSON — strip markdown fences if present
     let parsed;
     try {
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      const cleaned = text
+        .replace(/```json\s*/gi, '')
+        .replace(/```\s*/g, '')
+        .trim();
+      const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
       if (!jsonMatch) throw new Error('No JSON found');
       parsed = JSON.parse(jsonMatch[0]);
     } catch(e) {
