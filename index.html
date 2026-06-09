@@ -333,15 +333,20 @@ function saveApiKey() {
 async function loadFromSheet() {
   setSyncStatus('Loading from Google Sheets…', '');
   try {
-    // Use gviz CSV export — works publicly if sheet is shared
-    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Avelyst`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Sheet not accessible');
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&sheet=Avelyst`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeout);
+    if (!res.ok) throw new Error('not accessible');
     const csv = await res.text();
     parseAvelystSheet(csv);
-    setSyncStatus(`✓ Loaded from Google Sheets — ${Object.keys(schedule).length} posts`, 'ok');
+    setSyncStatus(`✓ Loaded ${Object.keys(schedule).length} posts from Google Sheets`, 'ok');
   } catch(e) {
-    setSyncStatus('⚠ Could not load Sheet — make sure it is shared publicly (View access)', 'err');
+    const msg = e.name === 'AbortError'
+      ? 'Sheet timed out — share it: File → Share → Anyone with link → Viewer'
+      : 'Could not load Sheet — share it: File → Share → Anyone with link → Viewer';
+    setSyncStatus(`⚠ ${msg}`, 'err');
   }
   renderWeek();
 }
