@@ -262,6 +262,8 @@ window.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(window.location.search);
   prefillTopic = params.get('topic') || '';
   prefillNotes = params.get('notes') || '';
+  console.log('prefillTopic:', prefillTopic);
+  console.log('prefillNotes:', prefillNotes);
   const pillarParam = params.get('pillar');
   if (pillarParam) {
     const map = {'1':'edu','2':'checklist','3':'edu','4':'service'};
@@ -271,6 +273,18 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
   render();
+
+  // Force-set values after render as fallback
+  setTimeout(() => {
+    if (prefillTopic) {
+      const el = document.getElementById('fi-topic') || document.getElementById('fi-service');
+      if (el) el.value = prefillTopic;
+    }
+    if (prefillNotes) {
+      const el = document.getElementById('fi-extra') || document.getElementById('fi-profile');
+      if (el) el.value = prefillNotes;
+    }
+  }, 50);
 });
 
 function saveKey() {
