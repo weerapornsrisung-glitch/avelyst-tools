@@ -249,19 +249,19 @@ BODY: ...`
 
 let cur = 'edu';
 let prefillTopic = '';
+let prefillNotes = '';
 let rawOutput = '';
 
 window.addEventListener('DOMContentLoaded', () => {
-  // Load API key
   const key = localStorage.getItem('avelyst_api_key');
   if (key) {
     document.getElementById('apiKeyInput').value = key;
     document.getElementById('apiStatus').style.display = 'inline';
     document.getElementById('apiBanner').classList.add('saved');
   }
-  // Read URL params from dashboard
   const params = new URLSearchParams(window.location.search);
   prefillTopic = params.get('topic') || '';
+  prefillNotes = params.get('notes') || '';
   const pillarParam = params.get('pillar');
   if (pillarParam) {
     const map = {'1':'edu','2':'checklist','3':'edu','4':'service'};
@@ -271,12 +271,6 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
   render();
-  if (prefillTopic) {
-    const banner = document.createElement('div');
-    banner.style.cssText = 'background:#E8F0EE;border:1px solid #b2d0c8;border-radius:10px;padding:10px 16px;margin-bottom:16px;font-size:12px;color:#2C4A3E;';
-    banner.innerHTML = '📅 <strong>Opened from dashboard</strong> — topic pre-filled from your content calendar.';
-    document.getElementById('form-area').insertAdjacentElement('beforebegin', banner);
-  }
 });
 
 function saveKey() {
@@ -297,6 +291,7 @@ function getKey() {
 function sw(t, btn) {
   cur = t;
   prefillTopic = '';
+  prefillNotes = '';
   document.querySelectorAll('.tb').forEach(b => b.classList.remove('on'));
   btn.classList.add('on');
   render();
@@ -321,7 +316,8 @@ function render() {
   const T = TYPES[cur];
   const fhtml = T.f.map(f => {
     const isTopicField = f.i === 'topic' || f.i === 'service';
-    const val = isTopicField ? prefillTopic : '';
+    const isExtraField = f.i === 'extra';
+    const val = isTopicField ? prefillTopic : isExtraField ? prefillNotes : '';
     return `<div class="field-gap">
       <label class="fl">${f.l}</label>
       ${f.sel
@@ -468,81 +464,37 @@ function copyRaw() {
 }
 
 async function pushToCanva() {
-  const key = getKey();
-  if (!key || !key.startsWith('sk-')) {
-    showErr('err-box', '⚠️ Please enter your API key above first.');
-    return;
-  }
   const btn = document.getElementById('btn-canva');
-  btn.textContent = '⟳ Creating in Canva…';
-  btn.disabled = true;
-
+  const resultBox = document.getElementById('canva-result');
   const topic = getTopic();
-  const canvaPrompt = `Create a Canva carousel presentation for Avelyst clinic using brand_kit_id "kAD7wYbvzek".
 
-Topic: ${topic}
+  // Build a clean text summary to copy
+  const canvaText = `AVELYST CAROUSEL — ${topic}\n\n${rawOutput}\n\nBrand: Use Avelyst brand kit. Dark green headers (#2C4A3E), cream background (#FAF7F2), Cormorant Garamond for headlines, DM Sans for body.`;
 
-Slide content:
-${rawOutput}
-
-Requirements:
-- Use Avelyst brand kit (kAD7wYbvzek) for all colors, fonts, and styles
-- Create as a presentation with one slide per carousel card
-- Portrait format for Instagram carousel
-- Each slide: large headline + body text, clean layout
-- Cover slide most visually prominent`;
-
+  // Copy to clipboard
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-5',
-        max_tokens: 1000,
-        mcp_servers: [{ type: 'url', url: 'https://mcp.canva.com/mcp', name: 'canva' }],
-        messages: [{ role: 'user', content: canvaPrompt }],
-        system: `When creating Canva designs, ALWAYS use brand_kit_id: "kAD7wYbvzek" for Avelyst's brand colors and fonts. Create as a presentation type for carousel format.`
-      })
-    });
-    const data = await res.json();
-    if (data.error) {
-      showErr('err-box', `⚠️ Canva error: ${data.error.message}`);
-      btn.textContent = '🎨 Create in Canva';
-      btn.disabled = false;
-      return;
-    }
-    // Extract any URL from response
-    const text = data.content?.map(b => b.text || '').join('') || '';
-    const urlMatch = text.match(/https:\/\/www\.canva\.com\/design\/[^\s"')]+/);
+    await navigator.clipboard.writeText(canvaText);
+  } catch(e) {}
 
-    // Show result
-    const resultBox = document.getElementById('canva-result');
-    if (urlMatch) {
-      resultBox.innerHTML = `
-        <div style="background:#E8F0EE;border:1px solid #b2d0c8;border-radius:10px;padding:14px 18px;margin-top:12px">
-          <div style="font-size:12px;font-weight:500;color:var(--green);margin-bottom:6px">✓ Canva design created!</div>
-          <a href="${urlMatch[0]}" target="_blank" style="font-size:13px;color:var(--green);font-weight:500">Open in Canva →</a>
-          <div style="font-size:11px;color:var(--mut);margin-top:6px;line-height:1.5">${text.substring(0,200)}...</div>
-        </div>`;
-    } else {
-      resultBox.innerHTML = `
-        <div style="background:#E8F0EE;border:1px solid #b2d0c8;border-radius:10px;padding:14px 18px;margin-top:12px">
-          <div style="font-size:12px;color:var(--green);line-height:1.65">${text.substring(0,400)}</div>
-        </div>`;
-    }
-    resultBox.style.display = 'block';
-    btn.textContent = '🎨 Create in Canva';
-    btn.disabled = false;
-  } catch(e) {
-    showErr('err-box', '⚠️ Could not connect to Canva. Make sure your API key is valid.');
-    btn.textContent = '🎨 Create in Canva';
-    btn.disabled = false;
-  }
+  // Open Canva new presentation
+  window.open('https://www.canva.com/design/DANew/presentation', '_blank');
+
+  resultBox.innerHTML = `
+    <div style="background:#E8F0EE;border:1px solid #b2d0c8;border-radius:10px;padding:16px 18px;margin-top:12px">
+      <div style="font-size:13px;font-weight:500;color:#2C4A3E;margin-bottom:8px">📋 Carousel copy copied to clipboard!</div>
+      <div style="font-size:12px;color:#6B6560;line-height:1.7">
+        Canva is opening in a new tab. Here's what to do:<br>
+        <strong>1.</strong> In Canva, choose your Instagram carousel size (1080×1350px)<br>
+        <strong>2.</strong> Apply your Avelyst brand kit<br>
+        <strong>3.</strong> Paste the slide copy into each slide<br><br>
+        <em>💡 In Phase 3 we'll build a Canva template that autofills this automatically.</em>
+      </div>
+      <button onclick="navigator.clipboard.writeText(${JSON.stringify(canvaText)}).then(()=>{this.textContent='Copied!';setTimeout(()=>this.textContent='Copy Again',1500)})" 
+        style="margin-top:10px;background:#2C4A3E;color:white;border:none;border-radius:6px;padding:7px 16px;font-family:inherit;font-size:12px;cursor:pointer">
+        Copy Carousel Text Again
+      </button>
+    </div>`;
+  resultBox.style.display = 'block';
 }
 
 function showErr(id, msg) {
