@@ -165,11 +165,11 @@ input[type=week]:focus{border-color:var(--green)}
   <div class="week-nav">
     <div class="week-title">Content <em>Dashboard</em></div>
     <div class="week-controls">
-      <button class="wbtn" onclick="jumpWeek(-1)">← Prev</button>
-      <button class="wbtn curr" id="btnThisWeek" onclick="jumpWeek(0)">This Week</button>
-      <button class="wbtn" onclick="jumpWeek(1)">Next →</button>
-      <input type="week" id="weekPicker" onchange="jumpToWeekPicker(this.value)" title="Jump to any week">
-      <button class="gen-week-btn" onclick="generateWeek()">✦ Generate This Week</button>
+      <button class="wbtn" onclick="jumpWeek(-1)">← Prev 5</button>
+      <button class="wbtn curr" id="btnThisWeek" onclick="jumpWeek(0)">First Unposted</button>
+      <button class="wbtn" onclick="jumpWeek(1)">Next 5 →</button>
+      <input type="number" id="weekPicker" min="1" max="999" placeholder="Day #" onchange="jumpToWeekPicker(this.value)" style="width:80px;background:var(--cream);border:1px solid var(--sand);border-radius:7px;padding:6px 10px;font-family:inherit;font-size:12px;color:var(--txt);outline:none" title="Jump to day number">
+      <button class="gen-week-btn" onclick="loadFromSheet()">↺ Refresh Sheet</button>
     </div>
   </div>
 
@@ -298,9 +298,9 @@ const BANK = {
 };
 
 // ─── STATE ───────────────────────────────────────────────────
-let weekOffset = 0;
-let schedule = {}; // keyed by ISO date "YYYY-MM-DD"
+let schedule = {}; // keyed by day number "day-N"
 let weekData = [];
+let dayStart = 1;
 
 // ─── INIT ─────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
@@ -406,14 +406,11 @@ function parseAvelystSheet(csv) {
       datePosted,
       contentLink: contentLink?.trim() || '',
       pillar,
-      notes: brief.trim(),
+      notes: '',
     };
 
-    if (iso) {
-      schedule[iso] = entry;
-    } else {
-      // No date yet — store by day number for unscheduled posts
-      schedule[`unscheduled-${day}`] = entry;
+    if (entry.day > 0) {
+      schedule[`day-${entry.day}`] = entry;
     }
   });
 }
@@ -437,194 +434,67 @@ function setSyncStatus(msg, cls) {
   el.className = 'sync-status' + (cls ? ' '+cls : '');
 }
 
-// ─── WEEK NAVIGATION ─────────────────────────────────────────
-function getMonday(offset) {
-  const now = new Date();
-  const day = now.getDay();
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1) + (offset * 7));
-  monday.setHours(0,0,0,0);
-  return monday;
-}
-
-function getWeekDates(offset) {
-  const monday = getMonday(offset);
-  return Array.from({length:5}, (_,i) => {
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
-    return d;
-  });
-}
-
-function toISODate(date) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
+// ─── DAY-NUMBER NAVIGATION ───────────────────────────────────
+let dayStart = 1;
 
 function jumpWeek(dir) {
-  if (dir === 0) weekOffset = 0;
-  else weekOffset += dir;
+  if (dir === 0) {
+    // Jump to first non-posted day
+    const allPosts = Object.values(schedule).filter(p=>p.day>0).sort((a,b)=>a.day-b.day);
+    const first = allPosts.find(p => p.status !== 'Posted');
+    dayStart = first ? Math.max(1, first.day) : 1;
+  } else {
+    dayStart = Math.max(1, dayStart + (dir * 5));
+  }
   renderWeek();
 }
 
 function jumpToWeekPicker(val) {
-  if (!val) return;
-  const [year, week] = val.split('-W').map(Number);
-  const jan4 = new Date(year, 0, 4);
-  const jan4Day = (jan4.getDay() + 6) % 7;
-  const targetMon = new Date(jan4);
-  targetMon.setDate(jan4.getDate() - jan4Day + (week - 1) * 7);
-  const curMon = getMonday(0);
-  weekOffset = Math.round((targetMon - curMon) / (7 * 24 * 60 * 60 * 1000));
-  renderWeek();
+  const n = parseInt(val);
+  if (!isNaN(n) && n > 0) { dayStart = n; renderWeek(); }
 }
 
-// ─── GENERATE WEEK (pick unused topics) ──────────────────────
 function generateWeek() {
-  const dates = getWeekDates(weekOffset);
-
-  // Get all topics already scheduled (Done/Posted = retired, others = in use)
-  const retiredTopics = new Set();
-  const scheduledTopics = new Set();
-  Object.values(schedule).forEach(p => {
-    if (p.status === 'Done' || p.status === 'Posted') retiredTopics.add(p.topic);
-    else scheduledTopics.add(p.topic);
-  });
-
-  dates.forEach((date, i) => {
-    const iso = toISODate(date);
-    const pillar = PILLAR_SEQ[i];
-
-    // If already Done/Posted — don't touch it
-    if (schedule[iso] && (schedule[iso].status === 'Done' || schedule[iso].status === 'Posted')) return;
-
-    // Pick unused topic for this pillar
-    const bank = BANK[pillar];
-    const available = bank.filter(t => !retiredTopics.has(t.t) && !scheduledTopics.has(t.t));
-    const pick = available.length > 0 ? available[0] : bank[i % bank.length];
-
-    schedule[iso] = {
-      date: iso,
-      pillar,
-      format: pick.f,
-      topic: pick.t,
-      hook: pick.h,
-      notes: '',
-      status: 'To Do',
-    };
-    scheduledTopics.add(pick.t);
-  });
-
-  // Sync back to calendar localStorage so both tools stay consistent
-  syncToCalendarStorage();
-  renderWeek();
-  setSyncStatus('✓ Week generated and saved', 'ok');
+  setSyncStatus('Update your Google Sheet to add posts, then click ↺ Refresh', 'err');
 }
-
-function syncToCalendarStorage() {
-  // Read existing calendar data
-  let existingCal = [];
-  const saved = localStorage.getItem('avelyst_calendar');
-  if (saved) {
-    try { existingCal = JSON.parse(saved).calendarData || []; } catch(e) {}
-  }
-
-  // Convert schedule back to calendar format and merge
-  const newEntries = Object.values(schedule).map(p => {
-    const d = new Date(p.date + 'T00:00:00');
-    const dayOfWeek = (d.getDay() + 6) % 7;
-    const DAYS_CAL = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-    return {
-      date: d.getDate(),
-      dayName: DAYS_CAL[dayOfWeek],
-      month: d.getMonth(),
-      year: d.getFullYear(),
-      pillar: p.pillar,
-      pillarLabel: ['Science','Tips & Transform',"Doctor's View",'Services'][p.pillar-1],
-      topic: p.topic,
-      format: p.format,
-      hook: p.hook || '',
-      funnel: ['Awareness','Interest','Trust','Conversion'][p.pillar-1],
-      status: p.status,
-      week: Math.ceil(d.getDate() / 7),
-    };
-  });
-
-  // Merge: dashboard entries override calendar entries for same dates
-  const existingMap = {};
-  existingCal.forEach(e => { existingMap[`${e.year}-${e.month}-${e.date}`] = e; });
-  newEntries.forEach(e => { existingMap[`${e.year}-${e.month}-${e.date}`] = e; });
-  const merged = Object.values(existingMap);
-
-  localStorage.setItem('avelyst_calendar', JSON.stringify({
-    calendarData: merged,
-    month: merged[0]?.month ?? new Date().getMonth(),
-    year: merged[0]?.year ?? new Date().getFullYear(),
-    pillarLabels: ['Science','Tips & Transform',"Doctor's View",'Services'],
-  }));
-}
-
-
 
 // ─── RENDER ───────────────────────────────────────────────────
 function renderWeek() {
-  const dates = getWeekDates(weekOffset);
-  weekData = dates.map(date => {
-    const iso = toISODate(date);
-    return schedule[iso] || {
-      date: iso,
-      pillar: PILLAR_SEQ[dates.indexOf(date)],
-      format: 'Reel / TikTok',
-      topic: '',
-      hook: '',
-      notes: '',
-      status: 'To Do',
-    };
-  });
+  const allPosts = Object.values(schedule).filter(p=>p.day>0).sort((a,b)=>a.day-b.day);
+  const maxDay = allPosts.length > 0 ? Math.max(...allPosts.map(p=>p.day)) : 30;
+  dayStart = Math.max(1, Math.min(dayStart, maxDay));
 
-  // Load any saved edits (notes, topics, formats changed by user)
+  weekData = [];
+  for (let d = dayStart; d < dayStart + 5; d++) {
+    const p = allPosts.find(post => post.day === d);
+    weekData.push(p || { day: d, date:'', pillar:1, topic:'', format:'Reel / TikTok', notes:'', status:'To Do', contentLink:'', phase:'' });
+  }
+
   loadDashboardEdits();
 
-  // Week label
-  const mon = dates[0], fri = dates[4];
+  const end = Math.min(dayStart + 4, maxDay);
   document.getElementById('weekLabel').innerHTML =
-    `<strong>${MONTHS[mon.getMonth()]} ${mon.getDate()} – ${MONTHS[fri.getMonth()]} ${fri.getDate()}, ${fri.getFullYear()}</strong>` +
-    (weekOffset === 0 ? ' · <span style="color:var(--acc2);font-weight:500">Current week</span>' :
-     weekOffset < 0 ? ` · ${Math.abs(weekOffset)} week${Math.abs(weekOffset)>1?'s':''} ago` :
-     ` · ${weekOffset} week${weekOffset>1?'s':''} ahead`);
+    `<strong>Day ${dayStart} – ${end}</strong> · ` +
+    `<span style="color:var(--mut)">${allPosts.filter(p=>p.status==='Posted').length} posted · ${allPosts.filter(p=>p.status!=='Posted').length} remaining</span>`;
 
-  // Week picker
-  const isoWeek = getISOWeek(mon);
-  document.getElementById('weekPicker').value = isoWeek;
+  const picker = document.getElementById('weekPicker');
+  if (picker) picker.value = dayStart;
 
   renderStats();
   renderGrid();
 }
 
-function getISOWeek(date) {
-  const d = new Date(date);
-  d.setHours(0,0,0,0);
-  d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
-  const w1 = new Date(d.getFullYear(), 0, 4);
-  const wn = 1 + Math.round(((d - w1) / 86400000 - 3 + (w1.getDay() + 6) % 7) / 7);
-  return `${d.getFullYear()}-W${String(wn).padStart(2,'0')}`;
-}
-
 function renderStats() {
-  let reels=0, carousels=0, posts=0, done=0;
-  weekData.forEach(p => {
-    if (p.format.includes('Reel')) reels++;
-    else if (p.format === 'Carousel') carousels++;
-    else posts++;
-    if (p.status === 'Done' || p.status === 'Posted') done++;
-  });
+  const allPosts = Object.values(schedule).filter(p=>p.day>0);
+  const posted = allPosts.filter(p=>p.status==='Posted').length;
+  const remaining = allPosts.filter(p=>p.status!=='Posted').length;
+  const carousels = weekData.filter(p=>p.format==='Carousel').length;
+  const reels = weekData.filter(p=>p.format.includes('Reel')||p.format.includes('TikTok')).length;
   document.getElementById('stats').innerHTML = `
-    <div class="stat-card"><div class="stat-num">${weekData.length}</div><div class="stat-label">Posts This Week</div></div>
-    <div class="stat-card"><div class="stat-num">${reels}</div><div class="stat-label">Reels / TikToks</div></div>
-    <div class="stat-card"><div class="stat-num">${carousels}</div><div class="stat-label">Carousels</div></div>
-    <div class="stat-card"><div class="stat-num">${done}</div><div class="stat-label">Done / Posted</div></div>
+    <div class="stat-card"><div class="stat-num">${allPosts.length}</div><div class="stat-label">Total Posts</div></div>
+    <div class="stat-card"><div class="stat-num">${posted}</div><div class="stat-label">Posted ✓</div></div>
+    <div class="stat-card"><div class="stat-num">${remaining}</div><div class="stat-label">Remaining</div></div>
+    <div class="stat-card"><div class="stat-num">${reels + carousels}</div><div class="stat-label">This View</div></div>
   `;
 }
 
@@ -644,20 +514,19 @@ function getBtn(format) {
 
 function cardHTML(p, i) {
   const col = PCOLS[p.pillar-1];
-  const isToday = p.date === toISODate(new Date());
   const sCls = {'To Do':'s-todo','In Progress':'s-progress','Done':'s-done','Posted':'s-posted'}[p.status]||'s-todo';
   const fmtOpts = FORMATS.map(f=>`<option${f===p.format?' selected':''}>${f}</option>`).join('');
   const plrOpts = [1,2,3,4].map(n=>`<option value="${n}"${n===p.pillar?' selected':''}>P${n} — ${PLABELS[n-1]}</option>`).join('');
   const stOpts = ['To Do','In Progress','Done','Posted'].map(s=>`<option${s===p.status?' selected':''}>${s}</option>`).join('');
   const {cls, label} = getBtn(p.format);
-  const dateObj = new Date(p.date + 'T00:00:00');
+  const isPosted = p.status === 'Posted';
 
-  return `<div class="post-card${isToday?' today':''}" style="${isToday?`border-color:${col};border-width:2px;`:''}">
+  return `<div class="post-card" style="${isPosted?'opacity:.7;':''}">
     <div class="card-top">
       <div style="display:flex;justify-content:space-between;align-items:flex-start">
         <div>
-          <div class="card-day">${DAYS[dateObj.getDay()]}${isToday?' · TODAY':''}</div>
-          <div class="card-date">${dateObj.getDate()} <span style="font-size:13px;color:var(--mut)">${MONTHS[dateObj.getMonth()]}</span></div>
+          <div class="card-day">DAY</div>
+          <div class="card-date" style="font-size:28px">${p.day}</div>
         </div>
         <span class="status-badge ${sCls}" id="sb-${i}">${p.status}</span>
       </div>
@@ -691,17 +560,14 @@ function cardHTML(p, i) {
 // ─── UPDATES ──────────────────────────────────────────────────
 function updateField(i, field, val) {
   weekData[i][field] = val;
-  if (schedule[weekData[i].date]) schedule[weekData[i].date][field] = val;
-  // Save notes and topic changes immediately to localStorage
-  if (field === 'notes' || field === 'topic' || field === 'format') {
-    saveDashboardState();
-  }
+  const key = `day-${weekData[i].day}`;
+  if (schedule[key]) schedule[key][field] = val;
+  if (field === 'notes' || field === 'topic' || field === 'format') saveDashboardState();
 }
 
 function saveDashboardState() {
-  // Save current weekData edits keyed by date
   const edits = {};
-  weekData.forEach(p => { edits[p.date] = p; });
+  weekData.forEach(p => { if (p.day) edits[`day-${p.day}`] = { notes: p.notes, topic: p.topic, format: p.format }; });
   const existing = JSON.parse(localStorage.getItem('avelyst_dashboard_edits') || '{}');
   Object.assign(existing, edits);
   localStorage.setItem('avelyst_dashboard_edits', JSON.stringify(existing));
@@ -710,8 +576,10 @@ function saveDashboardState() {
 function loadDashboardEdits() {
   const edits = JSON.parse(localStorage.getItem('avelyst_dashboard_edits') || '{}');
   weekData.forEach((p, i) => {
-    if (edits[p.date]) {
-      weekData[i] = { ...p, ...edits[p.date] };
+    const saved = edits[`day-${p.day}`];
+    if (saved) {
+      if (saved.notes) weekData[i].notes = saved.notes;
+      if (saved.topic && !p.topic) weekData[i].topic = saved.topic;
     }
   });
 }
