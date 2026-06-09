@@ -245,6 +245,8 @@ window.addEventListener('DOMContentLoaded', () => {
   prefillNotes = params.get('notes') || '';
   const pillarParam = params.get('pillar');
 
+  const typeParam = params.get('type');
+
   // Auto-select script type based on pillar
   if (pillarParam) {
     const pillarMap = {'1':'edu','2':'tips','3':'story','4':'service'};
@@ -256,12 +258,25 @@ window.addEventListener('DOMContentLoaded', () => {
 
   render();
 
-  // Show banner if opened from dashboard
+  // Show banner if opened from dashboard/sheet
   if (prefillTopic) {
     const banner = document.createElement('div');
     banner.style.cssText = 'background:#E8F0EE;border:1px solid #b2d0c8;border-radius:10px;padding:10px 16px;margin-bottom:16px;font-size:12px;color:#2C4A3E;';
     banner.innerHTML = '📅 <strong>Opened from dashboard</strong> — topic pre-filled from your content calendar. Edit freely.';
     document.getElementById('form-area').insertAdjacentElement('beforebegin', banner);
+  }
+
+  // If type=caption, scroll straight to caption section
+  if (typeParam === 'caption') {
+    setTimeout(() => {
+      const capSection = document.querySelector('.cap-section') || document.getElementById('cap-btn');
+      if (capSection) {
+        capSection.scrollIntoView({behavior:'smooth', block:'start'});
+        // Highlight caption section
+        const capCard = document.getElementById('cap-btn')?.closest('.card');
+        if (capCard) capCard.style.border = '2px solid #C4956A';
+      }
+    }, 300);
   }
 });
 
